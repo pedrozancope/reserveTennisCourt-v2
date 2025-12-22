@@ -271,17 +271,18 @@ export default function Schedules() {
             const nextTrigger = getNextTriggerDate(schedule)
 
             return (
-              <Card key={schedule.id}>
+              <Card
+                key={schedule.id}
+                className={!schedule.isActive ? "opacity-50" : ""}
+              >
                 <CardContent className="p-6">
                   {/* Header */}
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold text-lg">{schedule.name}</h3>
-                      <Badge
-                        variant={schedule.isActive ? "success" : "secondary"}
-                      >
-                        {schedule.isActive ? "Ativo" : "Inativo"}
-                      </Badge>
+                      {schedule.isActive && (
+                        <Badge variant="success">Ativo</Badge>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
