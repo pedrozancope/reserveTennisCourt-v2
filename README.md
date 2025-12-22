@@ -178,13 +178,35 @@ SELECT upsert_encrypted_config(
 
 ## 📖 Documentação Técnica
 
-Para detalhes da arquitetura, veja [ARCHITECTURE.md](./ARCHITECTURE.md)
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Arquitetura do sistema
+- [CLEANUP_SYSTEM.md](./CLEANUP_SYSTEM.md) - Sistema de limpeza automática
+
+## 🧹 Sistema de Limpeza Automática
+
+O sistema inclui limpeza automática para manter o banco leve:
+
+- **Logs**: Remove logs com mais de 30 dias
+- **Agendamentos**: Remove schedules inativos por mais de 30 dias
+- **Reservas**: Remove reservations com mais de 90 dias
+- **Frequência**: Todo domingo às 3h da manhã
+- **Monitoramento**: Histórico de limpezas em `cleanup_history`
+
+```sql
+-- Executar limpeza manual
+SELECT * FROM run_automatic_cleanup();
+
+-- Ver histórico
+SELECT * FROM cleanup_history ORDER BY executed_at DESC LIMIT 10;
+```
+
+Para mais detalhes, veja [CLEANUP_SYSTEM.md](./CLEANUP_SYSTEM.md)
 
 ## 📝 TODO
 
 - [x] ~~Integração completa com Supabase~~
 - [x] ~~Edge Functions com pg_cron~~
 - [x] ~~Criptografia de tokens com pgcrypto~~
+- [x] ~~Sistema de limpeza automática~~
 - [ ] Sistema de notificações
 - [ ] Autenticação com Google
 - [ ] Testes automatizados
