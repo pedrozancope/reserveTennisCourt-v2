@@ -1,0 +1,102 @@
+import { useLocation, NavLink } from "react-router-dom"
+import { Home, Calendar, FileText, Settings, Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { useState } from "react"
+
+const navItems = [
+  { path: "/", label: "Dashboard", icon: Home },
+  { path: "/schedules", label: "Agendamentos", icon: Calendar },
+  { path: "/logs", label: "Logs", icon: FileText },
+  { path: "/settings", label: "Configurações", icon: Settings },
+]
+
+export function Header() {
+  const location = useLocation()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Get current page title
+  const currentPage = navItems.find((item) => item.path === location.pathname)
+  const pageTitle = currentPage?.label || "Tennis Scheduler"
+
+  return (
+    <header className="sticky top-0 z-40 bg-card border-b border-border">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo / Title */}
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎾</span>
+            <div className="hidden sm:block">
+              <h1 className="text-lg font-semibold">Tennis Scheduler</h1>
+              <p className="text-xs text-muted-foreground">
+                Reservas automáticas
+              </p>
+            </div>
+            <h1 className="text-lg font-semibold sm:hidden">{pageTitle}</h1>
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path
+              return (
+                <NavLink key={item.path} to={item.path}>
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    size="sm"
+                    className={cn(
+                      "gap-2",
+                      isActive && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Button>
+                </NavLink>
+              )
+            })}
+          </nav>
+
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden pb-4 animate-fade-in">
+            <nav className="flex flex-col gap-1">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button
+                      variant={isActive ? "secondary" : "ghost"}
+                      className={cn(
+                        "w-full justify-start gap-2",
+                        isActive && "bg-primary/10 text-primary"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </Button>
+                  </NavLink>
+                )
+              })}
+            </nav>
+          </div>
+        )}
+      </div>
+    </header>
+  )
+}

@@ -1,0 +1,196 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Mr. Krabs Design System - Light Theme */
+    --background: 0 0% 98%;
+    --foreground: 222 22% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 22% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 22% 15%;
+
+    /* Brand Colors */
+    --primary: 247 34% 29%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 9 100% 64%;
+    --secondary-foreground: 222 22% 15%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 0 0% 93%;
+    --accent-foreground: 222 22% 15%;
+
+    /* Semantic Colors */
+    --success: 142 72% 40%;
+    --warning: 38 92% 50%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 245 58% 58%;
+
+    --radius: 1.25rem;
+
+    /* Chart Colors */
+    --chart-1: 245 58% 58%;
+    --chart-2: 142 72% 40%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 199 89% 48%;
+    --chart-5: 280 65% 60%;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 22% 15%;
+    --sidebar-primary: 245 58% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 222 22% 15%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 245 58% 58%;
+  }
+
+  .dark {
+    --background: 222 22% 10%;
+    --foreground: 0 0% 98%;
+
+    --card: 222 22% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 222 22% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 245 58% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 9 100% 64%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 222 22% 18%;
+    --muted-foreground: 220 9% 60%;
+
+    --accent: 222 22% 18%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 22% 20%;
+    --input: 222 22% 20%;
+    --ring: 245 58% 58%;
+
+    --sidebar-background: 222 22% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 245 58% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 22% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 222 22% 20%;
+    --sidebar-ring: 245 58% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    margin: 0;
+  }
+}
+
+@layer components {
+  /* Stat Card */
+  .stat-card {
+    @apply bg-card rounded-2xl p-6 shadow-card transition-all duration-200 hover:shadow-elevated;
+  }
+
+  /* Data Grid (Tables) */
+  .data-grid {
+    @apply w-full;
+  }
+
+  .data-grid thead th {
+    @apply px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide;
+  }
+
+  .data-grid tbody td {
+    @apply px-4 py-4 text-sm;
+  }
+
+  .data-grid tbody tr {
+    @apply border-b border-border transition-colors hover:bg-muted/50;
+  }
+
+  .data-grid tbody tr:last-child {
+    @apply border-b-0;
+  }
+
+  /* Status Badges */
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-badge-success {
+    @apply bg-success/10 text-success;
+  }
+
+  .status-badge-error {
+    @apply bg-destructive/10 text-destructive;
+  }
+
+  .status-badge-warning {
+    @apply bg-warning/10 text-warning;
+  }
+
+  .status-badge-pending {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* Mobile Bottom Nav */
+  .mobile-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border px-2 py-2 md:hidden z-50;
+  }
+
+  .mobile-nav-item {
+    @apply flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-muted-foreground transition-colors;
+  }
+
+  .mobile-nav-item.active {
+    @apply text-primary bg-primary/10;
+  }
+
+  .mobile-nav-item:hover:not(.active) {
+    @apply text-foreground bg-muted;
+  }
+
+  /* Page Container */
+  .page-container {
+    @apply min-h-screen pb-20 md:pb-6;
+  }
+
+  /* Editable Cell */
+  .editable-cell {
+    @apply cursor-text rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors hover:bg-muted focus:bg-accent focus:ring-2 focus:ring-primary/20 focus:outline-none;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.35s ease-out;
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.35s ease-out;
+  }
+}
