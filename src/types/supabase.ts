@@ -42,8 +42,7 @@ export interface Database {
           trigger_day_of_week: number
           trigger_time: string
           cron_expression: string
-          aws_rule_arn: string | null
-          aws_rule_name: string | null
+          pg_cron_job_id: number | null
           frequency: "weekly" | "biweekly" | "monthly"
           is_active: boolean
           start_date: string | null
@@ -62,8 +61,7 @@ export interface Database {
           trigger_day_of_week: number
           trigger_time?: string
           cron_expression: string
-          aws_rule_arn?: string | null
-          aws_rule_name?: string | null
+          pg_cron_job_id?: number | null
           frequency?: "weekly" | "biweekly" | "monthly"
           is_active?: boolean
           start_date?: string | null
@@ -82,8 +80,7 @@ export interface Database {
           trigger_day_of_week?: number
           trigger_time?: string
           cron_expression?: string
-          aws_rule_arn?: string | null
-          aws_rule_name?: string | null
+          pg_cron_job_id?: number | null
           frequency?: "weekly" | "biweekly" | "monthly"
           is_active?: boolean
           start_date?: string | null

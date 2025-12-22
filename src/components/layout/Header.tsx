@@ -7,6 +7,7 @@ import {
   Menu,
   LogOut,
   User,
+  PlayCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -17,6 +18,7 @@ const navItems = [
   { path: "/", label: "Dashboard", icon: Home },
   { path: "/schedules", label: "Agendamentos", icon: Calendar },
   { path: "/logs", label: "Logs", icon: FileText },
+  { path: "/test-e2e", label: "Teste E2E", icon: PlayCircle },
   { path: "/settings", label: "Configurações", icon: Settings },
 ]
 

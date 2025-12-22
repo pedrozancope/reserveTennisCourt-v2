@@ -28,8 +28,7 @@ function mapScheduleFromDB(
     triggerDayOfWeek: row.trigger_day_of_week,
     triggerTime: row.trigger_time,
     cronExpression: row.cron_expression,
-    awsRuleArn: row.aws_rule_arn || undefined,
-    awsRuleName: row.aws_rule_name || undefined,
+    pgCronJobId: row.pg_cron_job_id || undefined,
     frequency: row.frequency,
     isActive: row.is_active,
     startDate: row.start_date || undefined,
@@ -104,6 +103,7 @@ export function useCreateSchedule() {
       } = await supabase.auth.getUser()
       if (!user) throw new Error("Usuário não autenticado")
 
+      // 1. Create schedule in database
       const { data, error } = await supabase
         .from("schedules")
         .insert([
@@ -122,9 +122,36 @@ export function useCreateSchedule() {
 
       if (error) throw error
 
-      return mapScheduleFromDB(
+      const newSchedule = mapScheduleFromDB(
         data as unknown as ScheduleRow & { time_slot: TimeSlotRow }
       )
+
+      // 2. Call Edge Function to create pg_cron job
+      if (newSchedule.isActive) {
+        try {
+          const { data: functionData, error: functionError } =
+            await supabase.functions.invoke("create-schedule", {
+              body: {
+                scheduleId: newSchedule.id,
+                cronExpression: newSchedule.cronExpression,
+                scheduleName: newSchedule.name,
+              },
+            })
+
+          if (functionError) {
+            console.error("Error creating cron job:", functionError)
+            toast.error(
+              "Agendamento criado, mas houve erro ao criar o job automático"
+            )
+          } else {
+            console.log("Cron job created:", functionData)
+          }
+        } catch (err) {
+          console.error("Error invoking create-schedule function:", err)
+        }
+      }
+
+      return newSchedule
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schedules"] })

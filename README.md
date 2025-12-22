@@ -2,7 +2,7 @@
 
 > Sistema de reservas automáticas de quadras de tênis
 
-Um aplicativo web moderno para gerenciar reservas recorrentes de quadras de tênis, com integração AWS EventBridge para disparar reservas automaticamente 10 dias antes da data desejada (quando as vagas abrem!).
+Um aplicativo web moderno para gerenciar reservas recorrentes de quadras de tênis, com **pg_cron + Supabase Edge Functions** para disparar reservas automaticamente 10 dias antes da data desejada (quando as vagas abrem!).
 
 ## ✨ Funcionalidades
 
@@ -10,14 +10,18 @@ Um aplicativo web moderno para gerenciar reservas recorrentes de quadras de tên
 - ⏰ **Disparo automático** - Reserva às 00:01, 10 dias antes
 - 📊 **Dashboard** - Visão geral de próximas reservas e status
 - 📋 **Logs** - Histórico de todas as execuções
-- 🔑 **Tokens** - Gerencie refresh tokens do sistema Speed
-- 📧 **Notificações** - Receba e-mail de sucesso/falha
+- 🔑 **Tokens** - Gerencie tokens do sistema Speed (criptografados)
+- 📧 **Notificações** - Receba notificações de sucesso/falha
 
 ## 🚀 Quick Start
 
 ```bash
 # Instalar dependências
 npm install
+
+# Configurar variáveis de ambiente
+cp .env.example .env
+# Edite .env com suas credenciais Supabase
 
 # Iniciar em desenvolvimento
 npm run dev
@@ -27,16 +31,17 @@ Abra [http://localhost:5173](http://localhost:5173) 🎾
 
 ## 🛠️ Tech Stack
 
-| Ferramenta            | Propósito               |
-| --------------------- | ----------------------- |
-| ⚛️ React + TypeScript | UI Framework            |
-| 🎨 Tailwind CSS       | Estilização             |
-| 🧩 shadcn/ui          | Componentes             |
-| ⚡ Vite               | Build Tool              |
-| 🗄️ Supabase           | Database & Auth         |
-| 🔄 TanStack Query     | Data Fetching           |
-| ☁️ AWS EventBridge    | Triggers/Schedules      |
-| 🔐 AWS SSM            | Gerenciamento de Tokens |
+| Ferramenta            | Propósito                   |
+| --------------------- | --------------------------- |
+| ⚛️ React + TypeScript | UI Framework                |
+| 🎨 Tailwind CSS       | Estilização                 |
+| 🧩 shadcn/ui          | Componentes                 |
+| ⚡ Vite               | Build Tool                  |
+| 🗄️ Supabase           | Database & Auth             |
+| 🔄 TanStack Query     | Data Fetching               |
+| ⏰ pg_cron            | Scheduling (PostgreSQL)     |
+| 🔐 pgcrypto           | Criptografia de Tokens      |
+| 🌐 Edge Functions     | Serverless Functions (Deno) |
 
 ## 📁 Estrutura
 
@@ -106,26 +111,83 @@ As reservas abrem **10 dias antes** às **00:00**. O sistema dispara às **00:01
 
 ## 🔧 Configuração
 
-### Variáveis de Ambiente
+### 1. Frontend - Variáveis de Ambiente
 
-Crie um arquivo `.env.local`:
+Crie um arquivo `.env` na raiz:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SPEED_API_URL=https://speed.example.com/api
 ```
 
-### Supabase
+### 2. Supabase Database
 
-Configure as tabelas no Supabase conforme o schema em `supabase/migrations/`.
+Aplique as migrations:
+
+```bash
+# Via Supabase CLI
+supabase db push
+
+# Ou no Supabase Dashboard > SQL Editor, execute:
+# - 001_initial_schema.sql
+# - 002_add_pg_cron_and_functions.sql
+# - 003_add_encryption_support.sql
+```
+
+### 3. Edge Functions
+
+Deploy das functions:
+
+```bash
+supabase functions deploy create-schedule
+supabase functions deploy execute-reservation
+```
+
+Configure secrets:
+
+```bash
+supabase secrets set SPEED_API_URL=https://speed.example.com/api
+supabase secrets set SPEED_USER_ID=seu-user-id
+```
+
+### 4. Encryption Key
+
+No Supabase Dashboard:
+
+- Settings → Database → Custom Postgres Config
+- Adicionar: `app.encryption_key = sua-chave-super-secreta-aqui`
+
+### 5. Token Speed
+
+Via SQL Editor no Supabase:
+
+```sql
+SELECT upsert_encrypted_config(
+  'speed_auth_token',
+  'seu-token-do-speed-aqui',
+  true  -- encrypt
+);
+
+SELECT upsert_encrypted_config(
+  'speed_token_expiry',
+  '2025-12-31 23:59:59',
+  false
+);
+```
+
+## 📖 Documentação Técnica
+
+Para detalhes da arquitetura, veja [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ## 📝 TODO
 
-- [ ] Integração completa com Supabase
-- [ ] Edge Functions para AWS EventBridge
-- [ ] Edge Functions para AWS SSM
+- [x] ~~Integração completa com Supabase~~
+- [x] ~~Edge Functions com pg_cron~~
+- [x] ~~Criptografia de tokens com pgcrypto~~
+- [ ] Sistema de notificações
 - [ ] Autenticação com Google
-- [ ] Envio de e-mails via Resend
+- [ ] Testes automatizados
 
 ---
 

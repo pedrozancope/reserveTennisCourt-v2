@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  Mail,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,9 +26,40 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { useConfigByKey, useUpsertConfig } from "@/hooks/useConfig"
 
+// Função utilitária para chamada da Edge Function
+async function testarReservaAgora() {
+  try {
+    const res = await fetch("/functions/v1/execute-reservation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // Se precisar passar parâmetros, adicione no body
+      // body: JSON.stringify({ ... })
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      toast.error(`Erro ao executar reserva: ${data?.error || res.statusText}`)
+    } else {
+      toast.success("Reserva executada! Veja detalhes no log.")
+    }
+    // Opcional: exibir detalhes do log/execução
+    if (data?.log) {
+      toast(
+        <pre style={{ maxWidth: 400, whiteSpace: "pre-wrap" }}>
+          {typeof data.log === "string"
+            ? data.log
+            : JSON.stringify(data.log, null, 2)}
+        </pre>
+      )
+    }
+  } catch (err) {
+    toast.error("Erro inesperado ao testar reserva")
+  }
+}
+
 export default function Settings() {
   const [showToken, setShowToken] = useState(false)
   const [refreshToken, setRefreshToken] = useState("")
+  const [notificationEmail, setNotificationEmail] = useState("")
   const [notifications, setNotifications] = useState({
     emailOnSuccess: true,
     emailOnFailure: true,
@@ -37,6 +69,7 @@ export default function Settings() {
     useConfigByKey("auth_token")
   const { data: notifySuccessConfig } = useConfigByKey("notify_on_success")
   const { data: notifyFailureConfig } = useConfigByKey("notify_on_failure")
+  const { data: emailConfig } = useConfigByKey("notification_email")
 
   const upsertConfig = useUpsertConfig()
 
@@ -54,6 +87,12 @@ export default function Settings() {
       }))
     }
   }, [notifySuccessConfig, notifyFailureConfig])
+
+  useEffect(() => {
+    if (emailConfig?.value) {
+      setNotificationEmail(emailConfig.value)
+    }
+  }, [emailConfig])
 
   const handleUpdateToken = async () => {
     if (!refreshToken.trim()) {
@@ -84,6 +123,24 @@ export default function Settings() {
     } catch (error) {
       console.error(error)
       toast.error("Erro ao atualizar preferência")
+    }
+  }
+
+  const handleUpdateEmail = async () => {
+    if (!notificationEmail.trim()) {
+      toast.error("Digite um e-mail válido")
+      return
+    }
+
+    try {
+      await upsertConfig.mutateAsync({
+        key: "notification_email",
+        value: notificationEmail.trim(),
+      })
+      toast.success("E-mail de notificação atualizado!")
+    } catch (error) {
+      console.error(error)
+      toast.error("Erro ao atualizar e-mail")
     }
   }
 
@@ -228,6 +285,15 @@ export default function Settings() {
                 <li>Procure por "refresh_token" no LocalStorage</li>
                 <li>Copie o valor e cole aqui</li>
               </ol>
+              <div className="mt-6 flex justify-end">
+                <Button
+                  variant="secondary"
+                  onClick={testarReservaAgora}
+                  className="gap-2"
+                >
+                  <span>Testar Reserva Agora</span>
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -239,10 +305,44 @@ export default function Settings() {
               Notificações
             </CardTitle>
             <CardDescription>
-              Configure quando deseja receber alertas
+              Configure quando deseja receber alertas por e-mail
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Campo de E-mail */}
+            <div className="space-y-2">
+              <Label
+                htmlFor="notificationEmail"
+                className="flex items-center gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                E-mail para Notificações
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="notificationEmail"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={notificationEmail}
+                  onChange={(e) => setNotificationEmail(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleUpdateEmail}
+                  disabled={upsertConfig.isPending || !notificationEmail.trim()}
+                  variant="secondary"
+                >
+                  Salvar
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Você receberá notificações neste e-mail quando reservas forem
+                realizadas ou falharem.
+              </p>
+            </div>
+
+            <Separator />
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Reserva com Sucesso</p>

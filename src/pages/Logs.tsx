@@ -7,6 +7,7 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronUp,
+  FlaskConical,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -160,9 +161,22 @@ export default function Logs() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="font-semibold">
                               {log.schedule?.name ||
-                                "Agendamento não encontrado"}
+                                (log.isTest
+                                  ? `Teste E2E - ${
+                                      log.testHour ||
+                                      (log.requestPayload as any)
+                                        ?.reservationHour ||
+                                      "?"
+                                    }:00`
+                                  : "Execução Manual")}
                             </h3>
                             {getStatusBadge(log.status)}
+                            {log.isTest && (
+                              <Badge variant="outline" className="gap-1">
+                                <FlaskConical className="h-3 w-3" />
+                                Teste
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {log.message}

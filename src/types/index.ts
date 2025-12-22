@@ -15,8 +15,7 @@ export interface Schedule {
   triggerDayOfWeek: number // 0-6 (dom-sáb)
   triggerTime: string // '00:01:00'
   cronExpression: string
-  awsRuleArn?: string
-  awsRuleName?: string
+  pgCronJobId?: number
   frequency: "weekly" | "biweekly" | "monthly"
   isActive: boolean
   startDate?: string
@@ -31,6 +30,7 @@ export interface ExecutionLog {
   id: string
   scheduleId?: string
   schedule?: Schedule
+  userId?: string
   status: "success" | "error" | "pending"
   message?: string
   requestPayload?: Record<string, unknown>
@@ -38,6 +38,8 @@ export interface ExecutionLog {
   reservationDate?: string
   executedAt: string
   durationMs?: number
+  isTest?: boolean
+  testHour?: number
 }
 
 export interface Reservation {
@@ -102,4 +104,51 @@ export interface DashboardStats {
     scheduleName: string
   }
   tokenStatus: "valid" | "expiring" | "expired" | "unknown"
+}
+
+// Supabase Integration types
+export interface SpeedAuthToken {
+  token: string
+  expiresAt: string
+  userId: string
+}
+
+export interface SpeedReservationRequest {
+  token: string
+  timeSlotId: string
+  date: string // YYYY-MM-DD
+  userId: string
+}
+
+export interface SpeedReservationResponse {
+  success: boolean
+  reservationId?: string
+  message?: string
+  error?: string
+}
+
+// Edge Function Payloads
+export interface CreateSchedulePayload {
+  scheduleId: string
+  cronExpression: string
+  scheduleName: string
+}
+
+export interface ExecuteReservationPayload {
+  scheduleId: string
+  executionDate: string
+  timeSlotId: string
+}
+
+// pg_cron job info
+export interface PgCronJob {
+  jobid: number
+  schedule: string
+  command: string
+  nodename: string
+  nodeport: number
+  database: string
+  username: string
+  active: boolean
+  jobname: string
 }

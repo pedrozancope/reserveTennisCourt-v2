@@ -103,3 +103,63 @@ export function formatCronDescription(reservationDayOfWeek: number): string {
   const triggerDay = getTriggerDayOfWeek(reservationDayOfWeek)
   return `Toda ${DAY_NAMES_PT[triggerDay]} às 00:01`
 }
+
+/**
+ * Calcula a próxima data de execução baseada na cron expression
+ * @param cronExpression - Cron expression do EventBridge
+ * @param fromDate - Data de referência (default: agora)
+ * @returns Próxima data de execução
+ */
+export function getNextExecutionDate(
+  cronExpression: string,
+  fromDate: Date = new Date()
+): Date {
+  // Parse da cron expression do EventBridge
+  // Formato: cron(minutos hora dia-do-mês mês dia-da-semana ano)
+  const match = cronExpression.match(
+    /cron\((\d+)\s+(\d+)\s+\?\s+\*\s+(\w+)\s+\*\)/
+  )
+
+  if (!match) {
+    throw new Error("Invalid cron expression format")
+  }
+
+  const [, minutes, hours, dayName] = match
+  const targetDayOfWeek = DAY_NAMES.indexOf(dayName as any)
+
+  if (targetDayOfWeek === -1) {
+    throw new Error(`Invalid day name: ${dayName}`)
+  }
+
+  const nextDate = new Date(fromDate)
+  const currentDayOfWeek = nextDate.getDay()
+
+  // Calcular dias até o próximo dia alvo
+  let daysUntilNext = (targetDayOfWeek - currentDayOfWeek + 7) % 7
+
+  // Se for o mesmo dia, verificar se o horário já passou
+  if (daysUntilNext === 0) {
+    const targetTime = new Date(nextDate)
+    targetTime.setHours(parseInt(hours) - 3, parseInt(minutes), 0, 0) // UTC-3 para BRT
+
+    if (nextDate >= targetTime) {
+      daysUntilNext = 7 // Próxima semana
+    }
+  }
+
+  nextDate.setDate(nextDate.getDate() + daysUntilNext)
+  nextDate.setHours(parseInt(hours) - 3, parseInt(minutes), 0, 0) // UTC-3 para BRT
+
+  return nextDate
+}
+
+/**
+ * Calcula a data de reserva baseada na data de trigger (10 dias depois)
+ * @param triggerDate - Data do trigger
+ * @returns Data da reserva
+ */
+export function getReservationDateFromTrigger(triggerDate: Date): Date {
+  const reservationDate = new Date(triggerDate)
+  reservationDate.setDate(reservationDate.getDate() + 10)
+  return reservationDate
+}

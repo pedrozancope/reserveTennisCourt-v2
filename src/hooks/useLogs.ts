@@ -39,6 +39,8 @@ function mapExecutionLogFromDB(
     reservationDate: row.reservation_date || undefined,
     executedAt: row.executed_at,
     durationMs: row.duration_ms || undefined,
+    isTest: (row as any).is_test || false,
+    testHour: (row as any).test_hour || undefined,
   }
 }
 
