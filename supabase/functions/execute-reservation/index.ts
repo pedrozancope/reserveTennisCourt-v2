@@ -124,6 +124,50 @@ function convertReservationDate(isTestMode: boolean = false): string {
 }
 
 /**
+ * Calcula a data da reserva baseado no modo de disparo
+ * @param schedule - O agendamento com trigger_mode e trigger_datetime
+ * @param isTestMode - Se true, usa a data de hoje
+ */
+function calculateReservationDate(
+  schedule: {
+    trigger_mode?: string
+    trigger_datetime?: string
+    reservation_day_of_week?: number
+  } | null,
+  isTestMode: boolean = false
+): string {
+  // Modo de teste: sempre usa a data de hoje
+  if (isTestMode) {
+    const today = new Date()
+    const month = String(today.getMonth() + 1).padStart(2, "0")
+    const day = String(today.getDate()).padStart(2, "0")
+    const year = today.getFullYear()
+    return `${month}/${day}/${year}`
+  }
+
+  // Se o schedule tem modo "trigger_date" com datetime específico
+  // A reserva deve ser feita para o DIA da data de disparo (não +10)
+  if (schedule?.trigger_mode === "trigger_date" && schedule.trigger_datetime) {
+    const triggerDate = new Date(schedule.trigger_datetime)
+    const month = String(triggerDate.getMonth() + 1).padStart(2, "0")
+    const day = String(triggerDate.getDate()).padStart(2, "0")
+    const year = triggerDate.getFullYear()
+    return `${month}/${day}/${year}`
+  }
+
+  // Modo padrão "reservation_date": usa +10 dias (regra do condomínio)
+  const today = new Date()
+  const targetDate = new Date(today)
+  targetDate.setDate(today.getDate() + 10)
+
+  const month = String(targetDate.getMonth() + 1).padStart(2, "0")
+  const day = String(targetDate.getDate()).padStart(2, "0")
+  const year = targetDate.getFullYear()
+
+  return `${month}/${day}/${year}`
+}
+
+/**
  * Obtém o ID da área baseado na hora
  * Igual: getIdOfArea() em Utils.js
  */
@@ -744,7 +788,8 @@ serve(async (req) => {
     // STEP 5: Make reservation via Speed API (ou simular em Dry Run)
     // ==========================================================================
     currentStep = "making_reservation"
-    const reservationDate = convertReservationDate(isTestMode)
+    // Usa a nova função que considera o trigger_mode do schedule
+    const reservationDate = calculateReservationDate(schedule, isTestMode)
     const idArea = getIdOfArea(reservationHour!)
 
     addLog(
@@ -757,6 +802,8 @@ serve(async (req) => {
         reservationHour,
         idArea,
         isDryRun,
+        triggerMode: schedule?.trigger_mode || "test_mode",
+        triggerDatetime: schedule?.trigger_datetime || null,
       }
     )
 

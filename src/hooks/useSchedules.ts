@@ -11,19 +11,21 @@ type TimeSlotRow = Database["public"]["Tables"]["time_slots"]["Row"]
 
 // Converter do formato do banco para o formato da aplicação
 function mapScheduleFromDB(
-  row: ScheduleRow & { time_slot: TimeSlotRow }
+  row: ScheduleRow & { time_slot: TimeSlotRow | null }
 ): Schedule {
   return {
     id: row.id,
     name: row.name,
     timeSlotId: row.time_slot_id,
-    timeSlot: {
-      id: row.time_slot.id,
-      hour: row.time_slot.hour,
-      externalId: row.time_slot.external_id,
-      displayName: row.time_slot.display_name,
-      createdAt: row.time_slot.created_at,
-    },
+    timeSlot: row.time_slot
+      ? {
+          id: row.time_slot.id,
+          hour: row.time_slot.hour,
+          externalId: row.time_slot.external_id,
+          displayName: row.time_slot.display_name,
+          createdAt: row.time_slot.created_at,
+        }
+      : undefined,
     reservationDayOfWeek: row.reservation_day_of_week,
     triggerDayOfWeek: row.trigger_day_of_week,
     triggerTime: row.trigger_time,
@@ -60,7 +62,7 @@ export function useSchedules() {
       if (error) throw error
 
       return (
-        data as unknown as (ScheduleRow & { time_slot: TimeSlotRow })[]
+        data as unknown as (ScheduleRow & { time_slot: TimeSlotRow | null })[]
       ).map(mapScheduleFromDB)
     },
   })
@@ -87,7 +89,7 @@ export function useSchedule(id: string | undefined) {
       if (error) throw error
 
       return mapScheduleFromDB(
-        data as unknown as ScheduleRow & { time_slot: TimeSlotRow }
+        data as unknown as ScheduleRow & { time_slot: TimeSlotRow | null }
       )
     },
     enabled: !!id,

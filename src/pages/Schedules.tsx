@@ -276,9 +276,7 @@ export default function Schedules() {
                   {/* Header */}
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-lg">
-                        {schedule.name}
-                      </h3>
+                      <h3 className="font-semibold text-lg">{schedule.name}</h3>
                       <Badge
                         variant={schedule.isActive ? "success" : "secondary"}
                       >
@@ -339,8 +337,8 @@ export default function Schedules() {
                       </span>
                       <span className="text-lg text-muted-foreground">•</span>
                       <span className="text-xl font-semibold">
-                        {schedule.timeSlot?.displayName || 
-                         getTimeSlotDisplay(schedule.timeSlotId)}
+                        {schedule.timeSlot?.displayName ||
+                          getTimeSlotDisplay(schedule.timeSlotId)}
                       </span>
                     </div>
                   </div>

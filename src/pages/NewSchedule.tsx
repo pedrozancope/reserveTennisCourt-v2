@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Calendar, Clock, Bell, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -46,6 +46,7 @@ export default function NewSchedule() {
   const { data: timeSlots = [] } = useTimeSlots()
   const createSchedule = useCreateSchedule()
   const updateSchedule = useUpdateSchedule()
+  const hasLoadedSchedule = useRef<string | null>(null)
   const [formData, setFormData] = useState<ScheduleFormData>({
     name: "",
     timeSlotHour: 7,
@@ -77,34 +78,50 @@ export default function NewSchedule() {
 
   // Load schedule data if editing
   useEffect(() => {
-    if (schedule && isEditMode) {
-      setFormData({
-        name: schedule.name,
-        timeSlotHour: schedule.timeSlot?.hour || 7,
-        reservationDayOfWeek: schedule.reservationDayOfWeek,
-        frequency: schedule.frequency,
-        notifyOnSuccess: schedule.notifyOnSuccess,
-        notifyOnFailure: schedule.notifyOnFailure,
-      })
-      // Carregar configurações avançadas
-      if (schedule.triggerTime) {
-        const [h, m] = schedule.triggerTime.split(":")
-        setTriggerHour(parseInt(h) || 0)
-        setTriggerMinute(parseInt(m) || 1)
-      }
-      setTriggerMode(schedule.triggerMode || "reservation_date")
-      if (schedule.triggerDatetime) {
-        // Converter de ISO (UTC) para formato datetime-local (timezone local)
-        const utcDate = new Date(schedule.triggerDatetime)
-        const localDatetime = new Date(
-          utcDate.getTime() - utcDate.getTimezoneOffset() * 60000
-        )
-          .toISOString()
-          .slice(0, 16)
-        setTriggerDatetime(localDatetime)
-      }
+    // Só carrega se tiver schedule e estiver em modo de edição
+    if (!schedule || !isEditMode) return
+    // Evita loop infinito - só carrega uma vez por schedule.id
+    if (hasLoadedSchedule.current === schedule.id) return
+    // Aguarda timeSlots carregar
+    if (timeSlots.length === 0) return
+
+    // Buscar o horário do timeSlot pelo ID (mais confiável)
+    const foundSlot = timeSlots.find((ts: any) => ts.id === schedule.timeSlotId)
+    const timeSlotHour = foundSlot?.hour || schedule.timeSlot?.hour
+
+    if (!timeSlotHour) {
+      return
     }
-  }, [schedule, isEditMode])
+
+    // Marca como carregado para este schedule
+    hasLoadedSchedule.current = schedule.id
+
+    setFormData({
+      name: schedule.name,
+      timeSlotHour,
+      reservationDayOfWeek: schedule.reservationDayOfWeek,
+      frequency: schedule.frequency,
+      notifyOnSuccess: schedule.notifyOnSuccess,
+      notifyOnFailure: schedule.notifyOnFailure,
+    })
+    // Carregar configurações avançadas
+    if (schedule.triggerTime) {
+      const [h, m] = schedule.triggerTime.split(":")
+      setTriggerHour(parseInt(h) || 0)
+      setTriggerMinute(parseInt(m) || 1)
+    }
+    setTriggerMode(schedule.triggerMode || "reservation_date")
+    if (schedule.triggerDatetime) {
+      // Converter de ISO (UTC) para formato datetime-local (timezone local)
+      const utcDate = new Date(schedule.triggerDatetime)
+      const localDatetime = new Date(
+        utcDate.getTime() - utcDate.getTimezoneOffset() * 60000
+      )
+        .toISOString()
+        .slice(0, 16)
+      setTriggerDatetime(localDatetime)
+    }
+  }, [schedule, isEditMode, timeSlots])
 
   // Calculate preview data
   const triggerTime = `${triggerHour
@@ -281,6 +298,7 @@ export default function NewSchedule() {
               <div className="space-y-2">
                 <Label>Horário</Label>
                 <Select
+                  key={`timeslot-${formData.timeSlotHour}`}
                   value={formData.timeSlotHour.toString()}
                   onValueChange={(value) =>
                     setFormData((prev) => ({
