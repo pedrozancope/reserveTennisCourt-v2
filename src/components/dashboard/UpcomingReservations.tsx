@@ -1,6 +1,7 @@
 import { Calendar, Clock } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { DAY_NAMES_PT_SHORT } from "@/lib/cron"
 
 interface UpcomingReservation {
@@ -43,7 +44,7 @@ export function UpcomingReservations({
         <CardContent>
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
+              <Skeleton key={i} className="h-20" />
             ))}
           </div>
         </CardContent>

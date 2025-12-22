@@ -1,6 +1,7 @@
 import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { ExecutionLog } from "@/types"
 
 interface RecentActivityProps {
@@ -57,7 +58,7 @@ export function RecentActivity({ logs, isLoading }: RecentActivityProps) {
         <CardContent>
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-12 bg-muted animate-pulse rounded-lg" />
+              <Skeleton key={i} className="h-16" />
             ))}
           </div>
         </CardContent>

@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Calendar, Clock, Bell, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,10 +26,22 @@ import {
 } from "@/lib/cron"
 import { TIME_SLOTS, FREQUENCY_OPTIONS } from "@/lib/constants"
 import type { ScheduleFormData } from "@/types"
+import {
+  useCreateSchedule,
+  useUpdateSchedule,
+  useSchedule,
+  useTimeSlots,
+} from "@/hooks/useSchedules"
 
 export default function NewSchedule() {
   const navigate = useNavigate()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { id } = useParams()
+  const isEditMode = !!id
+
+  const { data: schedule, isLoading: loadingSchedule } = useSchedule(id)
+  const { data: timeSlots = [] } = useTimeSlots()
+  const createSchedule = useCreateSchedule()
+  const updateSchedule = useUpdateSchedule()
   const [formData, setFormData] = useState<ScheduleFormData>({
     name: "",
     timeSlotHour: 7,
@@ -38,6 +50,20 @@ export default function NewSchedule() {
     notifyOnSuccess: true,
     notifyOnFailure: true,
   })
+
+  // Load schedule data if editing
+  useEffect(() => {
+    if (schedule && isEditMode) {
+      setFormData({
+        name: schedule.name,
+        timeSlotHour: schedule.timeSlot?.hour || 7,
+        reservationDayOfWeek: schedule.reservationDayOfWeek,
+        frequency: schedule.frequency,
+        notifyOnSuccess: schedule.notifyOnSuccess,
+        notifyOnFailure: schedule.notifyOnFailure,
+      })
+    }
+  }, [schedule, isEditMode])
 
   // Calculate preview data
   const nextDates = getNextExecutionDates(formData.reservationDayOfWeek, 3)
@@ -55,24 +81,52 @@ export default function NewSchedule() {
       return
     }
 
-    setIsSubmitting(true)
+    // Encontrar o time_slot_id correto
+    const timeSlot = timeSlots.find(
+      (ts: any) => ts.hour === formData.timeSlotHour
+    )
+    if (!timeSlot) {
+      toast.error("Horário inválido")
+      return
+    }
+
+    const scheduleData: any = {
+      name: formData.name,
+      time_slot_id: timeSlot.id,
+      reservation_day_of_week: formData.reservationDayOfWeek,
+      trigger_day_of_week: triggerDay,
+      cron_expression: cronExpression,
+      frequency: formData.frequency,
+      notify_on_success: formData.notifyOnSuccess,
+      notify_on_failure: formData.notifyOnFailure,
+    }
 
     try {
-      // TODO: Implement actual API call to create schedule
-      // This will:
-      // 1. Create EventBridge rule with cron expression
-      // 2. Save schedule to Supabase
-
-      await new Promise((resolve) => setTimeout(resolve, 1500)) // Simulate API call
-
-      toast.success("Agendamento criado com sucesso!")
+      if (isEditMode && id) {
+        await updateSchedule.mutateAsync({ id, ...scheduleData })
+      } else {
+        await createSchedule.mutateAsync(scheduleData)
+      }
       navigate("/schedules")
     } catch (error) {
-      toast.error("Erro ao criar agendamento")
+      // Error handling is done in the hooks
       console.error(error)
-    } finally {
-      setIsSubmitting(false)
     }
+  }
+
+  const isSubmitting = createSchedule.isPending || updateSchedule.isPending
+
+  if (loadingSchedule && isEditMode) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            Carregando agendamento...
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -84,10 +138,12 @@ export default function NewSchedule() {
         </Button>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Novo Agendamento
+            {isEditMode ? "Editar Agendamento" : "Novo Agendamento"}
           </h1>
           <p className="text-muted-foreground">
-            Configure sua reserva recorrente
+            {isEditMode
+              ? "Atualize sua reserva recorrente"
+              : "Configure sua reserva recorrente"}
           </p>
         </div>
       </div>

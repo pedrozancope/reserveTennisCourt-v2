@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
   SelectContent,
@@ -18,118 +19,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLogs } from "@/hooks/useLogs"
 import type { ExecutionLog } from "@/types"
-
-// Mock data
-const mockLogs: ExecutionLog[] = [
-  {
-    id: "1",
-    scheduleId: "1",
-    schedule: {
-      id: "1",
-      name: "Tênis Domingo Manhã",
-      timeSlotId: "440",
-      reservationDayOfWeek: 0,
-      triggerDayOfWeek: 4,
-      triggerTime: "00:01:00",
-      cronExpression: "cron(1 3 ? * THU *)",
-      frequency: "weekly",
-      isActive: true,
-      notifyOnSuccess: true,
-      notifyOnFailure: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    status: "success",
-    message: "Reserva confirmada com sucesso",
-    reservationDate: "2025-01-05",
-    executedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    durationMs: 2340,
-    responsePayload: { reservationId: "12345", status: "confirmed" },
-  },
-  {
-    id: "2",
-    scheduleId: "2",
-    schedule: {
-      id: "2",
-      name: "Tênis Quarta Noite",
-      timeSlotId: "452",
-      reservationDayOfWeek: 3,
-      triggerDayOfWeek: 0,
-      triggerTime: "00:01:00",
-      cronExpression: "cron(1 3 ? * SUN *)",
-      frequency: "weekly",
-      isActive: true,
-      notifyOnSuccess: true,
-      notifyOnFailure: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    status: "success",
-    message: "Reserva confirmada com sucesso",
-    reservationDate: "2025-01-01",
-    executedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-    durationMs: 1890,
-  },
-  {
-    id: "3",
-    scheduleId: "1",
-    schedule: {
-      id: "1",
-      name: "Tênis Domingo Manhã",
-      timeSlotId: "440",
-      reservationDayOfWeek: 0,
-      triggerDayOfWeek: 4,
-      triggerTime: "00:01:00",
-      cronExpression: "cron(1 3 ? * THU *)",
-      frequency: "weekly",
-      isActive: true,
-      notifyOnSuccess: true,
-      notifyOnFailure: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    status: "error",
-    message: "Horário indisponível - já reservado por outro usuário",
-    reservationDate: "2024-12-29",
-    executedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
-    durationMs: 3200,
-    responsePayload: { error: "SLOT_UNAVAILABLE" },
-  },
-  {
-    id: "4",
-    scheduleId: "2",
-    schedule: {
-      id: "2",
-      name: "Tênis Quarta Noite",
-      timeSlotId: "452",
-      reservationDayOfWeek: 3,
-      triggerDayOfWeek: 0,
-      triggerTime: "00:01:00",
-      cronExpression: "cron(1 3 ? * SUN *)",
-      frequency: "weekly",
-      isActive: true,
-      notifyOnSuccess: true,
-      notifyOnFailure: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    status: "success",
-    message: "Reserva confirmada com sucesso",
-    reservationDate: "2024-12-25",
-    executedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-    durationMs: 2100,
-  },
-]
 
 export default function Logs() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [expandedLog, setExpandedLog] = useState<string | null>(null)
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
 
-  const filteredLogs =
+  const {
+    data: logs,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useLogs(
     statusFilter === "all"
-      ? mockLogs
-      : mockLogs.filter((log) => log.status === statusFilter)
+      ? {}
+      : { status: statusFilter as ExecutionLog["status"] }
+  )
+
+  const toggleExpanded = (id: string) => {
+    setExpandedLogs((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
 
   const getStatusIcon = (status: ExecutionLog["status"]) => {
     switch (status) {
@@ -143,53 +61,52 @@ export default function Logs() {
   }
 
   const getStatusBadge = (status: ExecutionLog["status"]) => {
-    switch (status) {
-      case "success":
-        return <Badge variant="success">Sucesso</Badge>
-      case "error":
-        return <Badge variant="error">Erro</Badge>
-      case "pending":
-        return <Badge variant="warning">Pendente</Badge>
+    const variants = {
+      success: "success" as const,
+      error: "destructive" as const,
+      pending: "secondary" as const,
     }
+    const labels = {
+      success: "Sucesso",
+      error: "Erro",
+      pending: "Pendente",
+    }
+    return <Badge variant={variants[status]}>{labels[status]}</Badge>
   }
 
-  const formatDateTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
-  const toggleExpanded = (id: string) => {
-    setExpandedLog(expandedLog === id ? null : id)
-  }
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Logs</h1>
           <p className="text-muted-foreground">
             Histórico de execuções das reservas
           </p>
         </div>
-        <Button variant="outline" size="sm" className="gap-2">
-          <RefreshCw className="h-4 w-4" />
-          <span className="hidden sm:inline">Atualizar</span>
-        </Button>
+        <div className="space-y-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Logs</h1>
+        <p className="text-muted-foreground">
+          Histórico de execuções das reservas
+        </p>
       </div>
 
-      {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Status" />
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
@@ -199,13 +116,21 @@ export default function Logs() {
             </SelectContent>
           </Select>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {filteredLogs.length} registro(s)
-        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isRefetching}
+          className="gap-2"
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
+          />
+          Atualizar
+        </Button>
       </div>
 
-      {/* Logs List */}
-      {filteredLogs.length === 0 ? (
+      {!logs || logs.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <div className="text-center text-muted-foreground">
@@ -214,101 +139,95 @@ export default function Logs() {
                 Nenhum log encontrado
               </h3>
               <p className="text-sm">
-                {statusFilter !== "all"
-                  ? "Tente mudar o filtro de status"
-                  : "As execuções aparecerão aqui"}
+                Os logs de execução aparecerão aqui quando as reservas forem
+                processadas.
               </p>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {filteredLogs.map((log) => (
-            <Card key={log.id}>
-              <CardContent className="p-0">
-                {/* Main row */}
-                <button
-                  className="w-full p-4 flex items-center justify-between text-left hover:bg-muted/30 transition-colors"
-                  onClick={() => toggleExpanded(log.id)}
-                >
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(log.status)}
-                    <div>
-                      <p className="font-medium">{log.schedule?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDateTime(log.executedAt)}
-                      </p>
+        <div className="space-y-4">
+          {logs.map((log) => {
+            const isExpanded = expandedLogs.has(log.id)
+            return (
+              <Card key={log.id}>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3 flex-1">
+                        {getStatusIcon(log.status)}
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold">
+                              {log.schedule?.name ||
+                                "Agendamento não encontrado"}
+                            </h3>
+                            {getStatusBadge(log.status)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {log.message}
+                          </p>
+                          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                            {log.reservationDate && (
+                              <span>
+                                Data da reserva:{" "}
+                                {new Date(
+                                  log.reservationDate
+                                ).toLocaleDateString("pt-BR")}
+                              </span>
+                            )}
+                            <span>
+                              Executado em:{" "}
+                              {new Date(log.executedAt).toLocaleString("pt-BR")}
+                            </span>
+                            {log.durationMs && (
+                              <span>Duração: {log.durationMs}ms</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleExpanded(log.id)}
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {getStatusBadge(log.status)}
-                    {expandedLog === log.id ? (
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+
+                    {isExpanded && (
+                      <div className="space-y-3 pt-3 border-t">
+                        {log.requestPayload && (
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">
+                              Request Payload
+                            </h4>
+                            <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto">
+                              {JSON.stringify(log.requestPayload, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                        {log.responsePayload && (
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">
+                              Response Payload
+                            </h4>
+                            <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto">
+                              {JSON.stringify(log.responsePayload, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                </button>
-
-                {/* Expanded details */}
-                {expandedLog === log.id && (
-                  <div className="px-4 pb-4 pt-0 border-t border-border animate-fade-in">
-                    <div className="mt-4 space-y-3">
-                      {/* Message */}
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">
-                          Mensagem
-                        </p>
-                        <p className="text-sm">{log.message || "-"}</p>
-                      </div>
-
-                      {/* Reservation Date */}
-                      {log.reservationDate && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Data da Reserva
-                          </p>
-                          <p className="text-sm">
-                            {new Date(log.reservationDate).toLocaleDateString(
-                              "pt-BR",
-                              {
-                                weekday: "long",
-                                day: "2-digit",
-                                month: "long",
-                                year: "numeric",
-                              }
-                            )}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Duration */}
-                      {log.durationMs && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Duração
-                          </p>
-                          <p className="text-sm">{log.durationMs}ms</p>
-                        </div>
-                      )}
-
-                      {/* Response */}
-                      {log.responsePayload && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Response
-                          </p>
-                          <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-                            {JSON.stringify(log.responsePayload, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

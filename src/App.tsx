@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "@/components/ui/sonner"
 import { AppLayout } from "@/components/layout/AppLayout"
+import { ProtectedRoute } from "@/components/ProtectedRoute"
+import Login from "@/pages/Login"
 import Dashboard from "@/pages/Dashboard"
 import Schedules from "@/pages/Schedules"
 import NewSchedule from "@/pages/NewSchedule"
@@ -22,7 +24,17 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route element={<AppLayout />}>
+          {/* Rota pública de login */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Rotas protegidas */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="/" element={<Dashboard />} />
             <Route path="/schedules" element={<Schedules />} />
             <Route path="/schedules/new" element={<NewSchedule />} />
