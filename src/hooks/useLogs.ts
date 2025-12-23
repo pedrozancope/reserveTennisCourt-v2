@@ -15,7 +15,7 @@ function mapExecutionLogFromDB(
     | Record<string, unknown>
     | undefined
   const executionLog =
-    (row.flow_steps as LogEntry[]) ||
+    (row.flow_steps as unknown as LogEntry[]) ||
     (responsePayload?.log as LogEntry[]) ||
     undefined
 

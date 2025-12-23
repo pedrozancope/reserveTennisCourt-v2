@@ -99,6 +99,7 @@ export interface Database {
           message: string | null
           request_payload: Json | null
           response_payload: Json | null
+          flow_steps: Json | null
           reservation_date: string | null
           executed_at: string
           duration_ms: number | null
@@ -110,6 +111,7 @@ export interface Database {
           message?: string | null
           request_payload?: Json | null
           response_payload?: Json | null
+          flow_steps?: Json | null
           reservation_date?: string | null
           executed_at?: string
           duration_ms?: number | null
@@ -121,6 +123,7 @@ export interface Database {
           message?: string | null
           request_payload?: Json | null
           response_payload?: Json | null
+          flow_steps?: Json | null
           reservation_date?: string | null
           executed_at?: string
           duration_ms?: number | null
