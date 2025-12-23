@@ -11,6 +11,7 @@ import {
   FlaskConical,
   Workflow,
   List,
+  Plane,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -260,6 +261,15 @@ export default function Logs() {
                               Teste
                             </Badge>
                           )}
+                          {log.executionType === "preflight" && (
+                            <Badge
+                              variant="secondary"
+                              className="gap-1 bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300"
+                            >
+                              <Plane className="h-3 w-3" />
+                              Pre-flight
+                            </Badge>
+                          )}
                         </div>
                         <CardDescription>{log.message}</CardDescription>
                         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-1">
@@ -310,6 +320,7 @@ export default function Logs() {
                         <FlowStepsLog
                           result={convertToExecutionResult(log)}
                           isTest={log.isTest}
+                          executionType={log.executionType}
                           title="Etapas da Execução"
                           subtitle={
                             log.status === "success"

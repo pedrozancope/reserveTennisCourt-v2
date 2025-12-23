@@ -48,6 +48,8 @@ function mapExecutionLogFromDB(
     durationMs: row.duration_ms || undefined,
     isTest: (row as any).is_test || false,
     testHour: (row as any).test_hour || undefined,
+    // Tipo de execução
+    executionType: (row as any).execution_type || "reservation",
     // Novos campos para log estruturado
     errorStep,
     executionLog,

@@ -10,6 +10,7 @@ import {
   ExternalLink,
   CheckCircle2,
   XCircle,
+  Plane,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -136,6 +137,13 @@ export default function NewSchedule() {
   >("reservation_date")
   const [triggerDatetime, setTriggerDatetime] = useState("")
 
+  // Campos para Pre-flight (Teste de Voo)
+  const [preflightEnabled, setPreflightEnabled] = useState(false)
+  const [preflightHoursBefore, setPreflightHoursBefore] = useState(4)
+  const [preflightNotifyOnSuccess, setPreflightNotifyOnSuccess] =
+    useState(false)
+  const [preflightNotifyOnFailure, setPreflightNotifyOnFailure] = useState(true)
+
   // Calcular dia da reserva automaticamente quando for trigger_date
   useEffect(() => {
     if (triggerMode === "trigger_date" && triggerDatetime) {
@@ -193,6 +201,11 @@ export default function NewSchedule() {
         .slice(0, 16)
       setTriggerDatetime(localDatetime)
     }
+    // Carregar configurações de Pre-flight
+    setPreflightEnabled(schedule.preflightEnabled ?? false)
+    setPreflightHoursBefore(schedule.preflightHoursBefore ?? 4)
+    setPreflightNotifyOnSuccess(schedule.preflightNotifyOnSuccess ?? false)
+    setPreflightNotifyOnFailure(schedule.preflightNotifyOnFailure ?? true)
   }, [schedule, isEditMode, timeSlots])
 
   // Calculate preview data
@@ -255,6 +268,10 @@ export default function NewSchedule() {
       frequency: formData.frequency,
       notify_on_success: formData.notifyOnSuccess,
       notify_on_failure: formData.notifyOnFailure,
+      preflight_enabled: preflightEnabled,
+      preflight_hours_before: preflightHoursBefore,
+      preflight_notify_on_success: preflightNotifyOnSuccess,
+      preflight_notify_on_failure: preflightNotifyOnFailure,
     }
 
     try {
@@ -589,6 +606,86 @@ export default function NewSchedule() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <Separator />
+
+              {/* Pre-flight (Teste de Voo) */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Plane className="h-4 w-4" />
+                    Teste de Voo (Pre-flight)
+                  </Label>
+                  <Switch
+                    checked={preflightEnabled}
+                    onCheckedChange={setPreflightEnabled}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Valida e atualiza o token de autenticação antes do disparo
+                  agendado
+                </p>
+
+                {preflightEnabled && (
+                  <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Horas antes do disparo</Label>
+                      <Select
+                        value={preflightHoursBefore.toString()}
+                        onValueChange={(value) =>
+                          setPreflightHoursBefore(parseInt(value))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 8, 10, 12, 24].map((hours) => (
+                            <SelectItem key={hours} value={hours.toString()}>
+                              {hours} hora{hours > 1 ? "s" : ""} antes
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        O teste será executado {preflightHoursBefore} hora
+                        {preflightHoursBefore > 1 ? "s" : ""} antes do horário
+                        de disparo
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-sm">
+                        Notificações do Pre-flight
+                      </Label>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Sucesso</p>
+                          <p className="text-xs text-muted-foreground">
+                            Notificar quando o pre-flight for bem-sucedido
+                          </p>
+                        </div>
+                        <Switch
+                          checked={preflightNotifyOnSuccess}
+                          onCheckedChange={setPreflightNotifyOnSuccess}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Falha</p>
+                          <p className="text-xs text-muted-foreground">
+                            Notificar quando houver erro no pre-flight
+                          </p>
+                        </div>
+                        <Switch
+                          checked={preflightNotifyOnFailure}
+                          onCheckedChange={setPreflightNotifyOnFailure}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

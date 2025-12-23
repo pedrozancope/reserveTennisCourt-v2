@@ -39,6 +39,12 @@ function mapScheduleFromDB(
     endDate: row.end_date || undefined,
     notifyOnSuccess: row.notify_on_success,
     notifyOnFailure: row.notify_on_failure,
+    // Campos de Pre-flight
+    preflightEnabled: (row as any).preflight_enabled ?? false,
+    preflightHoursBefore: (row as any).preflight_hours_before ?? 4,
+    preflightNotifyOnSuccess: (row as any).preflight_notify_on_success ?? false,
+    preflightNotifyOnFailure: (row as any).preflight_notify_on_failure ?? true,
+    lastPreflightAt: (row as any).last_preflight_at || undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

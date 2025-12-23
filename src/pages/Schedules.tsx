@@ -12,6 +12,7 @@ import {
   Target,
   Repeat,
   CalendarClock,
+  Plane,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -282,6 +283,15 @@ export default function Schedules() {
                       <h3 className="font-semibold text-lg">{schedule.name}</h3>
                       {schedule.isActive && (
                         <Badge variant="success">Ativo</Badge>
+                      )}
+                      {schedule.preflightEnabled && (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300"
+                        >
+                          <Plane className="h-3 w-3" />
+                          Pre-flight
+                        </Badge>
                       )}
                     </div>
 

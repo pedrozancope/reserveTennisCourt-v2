@@ -24,6 +24,12 @@ export interface Schedule {
   endDate?: string
   notifyOnSuccess: boolean
   notifyOnFailure: boolean
+  // Campos de Pre-flight (Teste de Voo)
+  preflightEnabled: boolean
+  preflightHoursBefore: number
+  preflightNotifyOnSuccess: boolean
+  preflightNotifyOnFailure: boolean
+  lastPreflightAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -50,6 +56,8 @@ export interface ExecutionLog {
   durationMs?: number
   isTest?: boolean
   testHour?: number
+  // Tipo de execução: reserva real, pre-flight ou teste
+  executionType: "reservation" | "preflight" | "test"
   // Campos para log estruturado
   errorStep?: string
   executionLog?: LogEntry[]

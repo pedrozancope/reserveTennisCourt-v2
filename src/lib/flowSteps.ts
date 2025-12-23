@@ -10,6 +10,7 @@ import {
   Search,
   Bell,
   Save,
+  Plane,
   type LucideIcon,
 } from "lucide-react"
 
@@ -106,6 +107,40 @@ export const TEST_FLOW_STEPS: FlowStep[] = RESERVATION_FLOW_STEPS.filter(
     step.id !== "sending_notification"
 )
 
+// Steps para Pre-flight (validação de token)
+export const PREFLIGHT_FLOW_STEPS: FlowStep[] = [
+  {
+    id: "initialization",
+    name: "Iniciar Pre-flight",
+    icon: Plane,
+    description: "Inicializar verificação",
+  },
+  {
+    id: "getting_refresh_token",
+    name: "Buscar Token",
+    icon: Key,
+    description: "Obter refresh token do banco",
+  },
+  {
+    id: "authenticating_superlogica",
+    name: "Autenticar",
+    icon: Shield,
+    description: "Autenticar na API SuperLogica",
+  },
+  {
+    id: "updating_refresh_token",
+    name: "Atualizar Token",
+    icon: RefreshCw,
+    description: "Salvar novo refresh token",
+  },
+  {
+    id: "success",
+    name: "Sucesso",
+    icon: CheckCircle2,
+    description: "Token validado com sucesso!",
+  },
+]
+
 // Mapeia IDs de step para nomes legíveis
 export const STEP_NAMES: Record<string, string> = {
   initialization: "Inicialização",
@@ -120,6 +155,8 @@ export const STEP_NAMES: Record<string, string> = {
   saving_execution_log: "Salvamento do Log",
   saving_reservation: "Salvamento da Reserva",
   sending_notification: "Envio de Notificação",
+  preflight_start: "Início do Pre-flight",
+  updating_last_preflight: "Atualização do Status Pre-flight",
   success: "Sucesso",
   error: "Erro",
 }
@@ -127,10 +164,16 @@ export const STEP_NAMES: Record<string, string> = {
 // Função para obter steps relevantes baseado no contexto
 export function getRelevantSteps(
   isTest: boolean,
-  logEntries?: LogEntry[]
+  logEntries?: LogEntry[],
+  executionType?: "reservation" | "preflight" | "test"
 ): FlowStep[] {
+  // Se for preflight, usa steps de preflight
+  if (executionType === "preflight") {
+    return PREFLIGHT_FLOW_STEPS
+  }
+
   // Se for teste, usa steps simplificados
-  if (isTest) {
+  if (isTest || executionType === "test") {
     return TEST_FLOW_STEPS
   }
 
