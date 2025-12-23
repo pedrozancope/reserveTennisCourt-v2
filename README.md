@@ -195,11 +195,21 @@ The system uses **pg_cron** (PostgreSQL extension) to schedule automatic executi
 
 These run automatically in the background:
 
-| Job              | Schedule           | Description                        |
-| ---------------- | ------------------ | ---------------------------------- |
-| `check-triggers` | Every minute       | Checks for schedules ready to fire |
-| `run-preflight`  | Every minute       | Runs pre-flight tests when due     |
-| `run-cleanup`    | Daily at 04:00 UTC | Cleans old logs and expired data   |
+| Job                           | Cron Expression           | Runs at minutes                   | Description                        |
+| ----------------------------- | ------------------------- | --------------------------------- | ---------------------------------- |
+| `check-and-execute-schedules` | `0,1,2,3,5,15,30 * * * *` | :00, :01, :02, :03, :05, :15, :30 | Checks for schedules ready to fire |
+| `preflight-check`             | `0,1,2,3,5,15,30 * * * *` | :00, :01, :02, :03, :05, :15, :30 | Runs pre-flight tests when due     |
+| `automatic-cleanup`           | `0 3 * * 0`               | Sundays at 03:00 UTC              | Cleans old logs and expired data   |
+
+> **Why these specific minutes?** Most reservations trigger at 00:01 or 00:02 BRT. Running at `:00, :01, :02, :03, :05, :15, :30` gives us **88% fewer executions** while still covering critical times! 🎯
+
+**What each job does:**
+
+| Job                   | Function                                                                  |
+| --------------------- | ------------------------------------------------------------------------- |
+| `check-and-execute-*` | Finds schedules whose trigger time has arrived and fires them             |
+| `preflight-check`     | Validates auth tokens X hours before reservation triggers                 |
+| `automatic-cleanup`   | Removes logs >30 days, inactive schedules >30 days, reservations >90 days |
 
 ### 📅 Schedule-specific Cron Jobs
 
