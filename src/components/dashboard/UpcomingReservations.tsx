@@ -101,8 +101,8 @@ export function UpcomingReservations({
             let badgeVariant: "warning" | "outline" | "default" = "outline"
 
             if (hoursUntilTrigger < 0) {
-              badgeLabel = "Passou"
-              badgeVariant = "default"
+              badgeLabel = "Executando"
+              badgeVariant = "warning"
             } else if (hoursUntilTrigger < 1) {
               const minutesUntil = Math.floor((hoursUntilTrigger * 60) % 60)
               badgeLabel = `${minutesUntil}min`
@@ -118,28 +118,16 @@ export function UpcomingReservations({
               badgeVariant = "outline"
             }
 
-            // Label da reserva baseado no modo
+            // Label da reserva baseado no tempo até a data da reserva
             let reservationLabel = ""
-            if (reservation.triggerMode === "trigger_date") {
-              // Modo Data Específica: reserva no mesmo dia do disparo
-              if (daysUntilReservation === 0 && hoursUntilTrigger >= 0) {
-                reservationLabel = "Reserva hoje"
-              } else if (daysUntilReservation === 1) {
-                reservationLabel = "Reserva amanhã"
-              } else if (daysUntilReservation > 1) {
-                reservationLabel = `Reserva em ${daysUntilReservation} dias`
-              } else {
-                reservationLabel = "Reserva passou"
-              }
+            if (daysUntilReservation < 0) {
+              reservationLabel = "Passou"
+            } else if (daysUntilReservation === 0) {
+              reservationLabel = "Reserva hoje"
+            } else if (daysUntilReservation === 1) {
+              reservationLabel = "Reserva amanhã"
             } else {
-              // Modo Baseado na Reserva: +10 dias
-              if (daysUntilReservation === 0) {
-                reservationLabel = "Reserva hoje"
-              } else if (daysUntilReservation === 1) {
-                reservationLabel = "Reserva amanhã"
-              } else {
-                reservationLabel = `Reserva em ${daysUntilReservation} dias`
-              }
+              reservationLabel = `Reserva em ${daysUntilReservation} dias`
             }
 
             return (

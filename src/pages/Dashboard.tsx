@@ -31,14 +31,12 @@ export default function Dashboard() {
     if (schedule.triggerMode === "trigger_date" && schedule.triggerDatetime) {
       const triggerDate = new Date(schedule.triggerDatetime)
 
+      // Frequência única (once): retorna somente se ainda não passou
       if (schedule.frequency === "once") {
         return triggerDate > now ? triggerDate : null
       }
 
-      if (triggerDate > now) {
-        return triggerDate
-      }
-
+      // Frequência recorrente (weekly): encontrar próxima ocorrência do dia da semana
       const dayOfWeek = triggerDate.getDay()
       const hours = triggerDate.getHours()
       const minutes = triggerDate.getMinutes()
@@ -60,6 +58,7 @@ export default function Dashboard() {
 
     // MODO: Baseado na reserva (reservation_date)
     if (schedule.triggerMode === "reservation_date") {
+      // Frequência única: não mostra no dashboard (execução única já passou)
       if (schedule.frequency === "once") {
         return null
       }
@@ -89,37 +88,33 @@ export default function Dashboard() {
   const getReservationDate = (schedule: any, nextTrigger: Date | null) => {
     if (!nextTrigger) return null
 
-    // Modo Data Específica: reserva no mesmo dia do disparo
-    if (schedule.triggerMode === "trigger_date") {
-      return new Date(nextTrigger)
-    }
-
-    // Modo Baseado na Reserva: +10 dias do disparo
+    // IMPORTANTE: Em AMBOS os modos, a reserva é SEMPRE +10 dias do disparo
+    // O sistema dispara 10 dias antes da data desejada
     const reservationDate = new Date(nextTrigger)
     reservationDate.setDate(reservationDate.getDate() + 10)
     return reservationDate
   }
 
-  // Próximo agendamento ativo com data de disparo mais próxima
+  // Próximo agendamento ativo com data de RESERVA mais próxima
+  const now = new Date()
   const activeSchedulesWithDates = schedules
     .filter((s) => s.isActive)
     .map((s) => {
       const nextTrigger = getNextTriggerDate(s)
-      return { schedule: s, nextTrigger }
+      const reservationDate = getReservationDate(s, nextTrigger)
+      return { schedule: s, nextTrigger, reservationDate }
     })
-    .filter((item) => item.nextTrigger !== null)
-    .sort((a, b) => a.nextTrigger!.getTime() - b.nextTrigger!.getTime())
+    .filter((item) => item.nextTrigger !== null && item.reservationDate !== null)
+    // Filtrar reservas que já passaram
+    .filter((item) => item.reservationDate! > now)
+    // Ordenar por data da RESERVA (não do disparo)
+    .sort((a, b) => a.reservationDate!.getTime() - b.reservationDate!.getTime())
 
   const nextSchedule = activeSchedulesWithDates[0]?.schedule
   const nextTime = nextSchedule?.timeSlot?.displayName || "-"
-  const nextReservationDate = activeSchedulesWithDates[0]
-    ? getReservationDate(
-        activeSchedulesWithDates[0].schedule,
-        activeSchedulesWithDates[0].nextTrigger
-      )
-    : null
+  const nextReservationDate = activeSchedulesWithDates[0]?.reservationDate
 
-  // Formatar descrição com nome e data
+  // Formatar descrição com nome e data da reserva
   const nextReservationDescription = nextSchedule
     ? nextReservationDate
       ? `${nextSchedule.name} • ${nextReservationDate.toLocaleDateString(
@@ -202,21 +197,15 @@ export default function Dashboard() {
       {/* Main Content Grid */}
       <div className="grid lg:grid-cols-2 gap-6">
         <UpcomingReservations
-          reservations={activeSchedulesWithDates.slice(0, 4).map((item) => {
-            const reservationDate = getReservationDate(
-              item.schedule,
-              item.nextTrigger
-            )
-            return {
-              id: item.schedule.id,
-              scheduleName: item.schedule.name,
-              triggerDate: item.nextTrigger!,
-              reservationDate: reservationDate!,
-              time: item.schedule.timeSlot?.displayName || "",
-              dayOfWeek: item.schedule.reservationDayOfWeek,
-              triggerMode: item.schedule.triggerMode,
-            }
-          })}
+          reservations={activeSchedulesWithDates.slice(0, 4).map((item) => ({
+            id: item.schedule.id,
+            scheduleName: item.schedule.name,
+            triggerDate: item.nextTrigger!,
+            reservationDate: item.reservationDate!,
+            time: item.schedule.timeSlot?.displayName || "",
+            dayOfWeek: item.reservationDate!.getDay(),
+            triggerMode: item.schedule.triggerMode,
+          }))}
           isLoading={loadingSchedules}
         />
         <RecentActivity logs={recentLogs} isLoading={loadingLogs} />
