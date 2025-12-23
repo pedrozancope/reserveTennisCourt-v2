@@ -85,7 +85,7 @@ export default function Dashboard() {
   }
 
   // Calcular data da reserva baseado no modo e no próximo disparo
-  const getReservationDate = (schedule: any, nextTrigger: Date | null) => {
+  const getReservationDate = (_schedule: any, nextTrigger: Date | null) => {
     if (!nextTrigger) return null
 
     // IMPORTANTE: Em AMBOS os modos, a reserva é SEMPRE +10 dias do disparo
@@ -104,7 +104,9 @@ export default function Dashboard() {
       const reservationDate = getReservationDate(s, nextTrigger)
       return { schedule: s, nextTrigger, reservationDate }
     })
-    .filter((item) => item.nextTrigger !== null && item.reservationDate !== null)
+    .filter(
+      (item) => item.nextTrigger !== null && item.reservationDate !== null
+    )
     // Filtrar reservas que já passaram
     .filter((item) => item.reservationDate! > now)
     // Ordenar por data da RESERVA (não do disparo)
