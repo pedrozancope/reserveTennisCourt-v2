@@ -102,10 +102,10 @@ How often the reservation repeats:
 
 How to calculate **when** to fire:
 
-| Mode                 | How it works                           |
-| -------------------- | -------------------------------------- |
+| Mode                 | How it works                                   |
+| -------------------- | ---------------------------------------------- |
 | **Reservation Date** | "I want Sundays" → System picks Thursday 00:01 |
-| **Specific Date**    | "Fire on Dec 25th" → Reserves Jan 4th  |
+| **Specific Date**    | "Fire on Dec 25th" → Reserves Jan 4th          |
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -153,12 +153,12 @@ Pre-flight solves this! It runs **before** the real execution:
 - ✅ Credentials are correct
 - ✅ Schedule is properly configured
 
-| Option               | Description              | Default |
-| -------------------- | ------------------------ | ------- |
-| Enable Pre-flight    | Toggle the test          | Off     |
-| Hours before         | When to run before trigger | 4h      |
-| Notify on success    | Alert if all good        | No      |
-| Notify on failure    | Alert if something's wrong | Yes ✅  |
+| Option            | Description                | Default |
+| ----------------- | -------------------------- | ------- |
+| Enable Pre-flight | Toggle the test            | Off     |
+| Hours before      | When to run before trigger | 4h      |
+| Notify on success | Alert if all good          | No      |
+| Notify on failure | Alert if something's wrong | Yes ✅  |
 
 ## 🧪 E2E Test
 
@@ -179,13 +179,72 @@ Want to test without waiting for cron? Use the **E2E Test**!
 5. 🛡️ Authenticate       10. ✅ Save Reservation
 ```
 
-| Aspect             | E2E Test         | Real Execution    |
-| ------------------ | ---------------- | ----------------- |
-| Reservation date   | Today            | 10 days ahead     |
-| Needs schedule     | No               | Yes               |
-| Saves to database  | Yes (marked test)| Yes               |
+| Aspect            | E2E Test          | Real Execution |
+| ----------------- | ----------------- | -------------- |
+| Reservation date  | Today             | 10 days ahead  |
+| Needs schedule    | No                | Yes            |
+| Saves to database | Yes (marked test) | Yes            |
 
 > ⚠️ **Warning:** E2E test makes a **real reservation** for today! Use wisely.
+
+## ⏰ Cron Jobs
+
+The system uses **pg_cron** (PostgreSQL extension) to schedule automatic executions:
+
+### 🔧 System Cron Jobs
+
+These run automatically in the background:
+
+| Job              | Schedule           | Description                        |
+| ---------------- | ------------------ | ---------------------------------- |
+| `check-triggers` | Every minute       | Checks for schedules ready to fire |
+| `run-preflight`  | Every minute       | Runs pre-flight tests when due     |
+| `run-cleanup`    | Daily at 04:00 UTC | Cleans old logs and expired data   |
+
+### 📅 Schedule-specific Cron Jobs
+
+Each schedule creates its own cron job with this pattern:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              CRON EXPRESSION FORMAT                         │
+│                                                             │
+│   cron(minute hour ? * DAY *)                              │
+│         │      │       │                                    │
+│         │      │       └─ Day of week (SUN, MON, TUE...)   │
+│         │      └─ Hour in UTC (BRT + 3)                    │
+│         └─ Minute (usually 1)                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 🌍 Timezone Conversion
+
+All cron jobs run in **UTC**. Conversion from BRT (Brasília):
+
+| BRT Time | UTC Time | Cron Expression Example  |
+| -------- | -------- | ------------------------ |
+| 00:01    | 03:01    | `cron(1 3 ? * THU *)`    |
+| 06:00    | 09:00    | `cron(0 9 ? * THU *)`    |
+| 20:01    | 23:01    | `cron(1 23 ? * WED *)`   |
+| 23:00    | 02:00+1  | `cron(0 2 ? * THU *)` ⚠️ |
+
+> ⚠️ **Note:** Times after 21:00 BRT roll over to the next UTC day!
+
+### 📋 Example: Sunday 7h Reservation
+
+```
+You want: Play Sunday at 7h
+┌─────────────────────────────────────────────────────────────┐
+│  1. System calculates: Trigger on Thursday (10 days before) │
+│  2. You set time: 00:01 BRT                                 │
+│  3. Cron converts: 03:01 UTC                                │
+│  4. Final expression: cron(1 3 ? * THU *)                   │
+│                                                             │
+│  If Pre-flight enabled (4h before):                        │
+│     Pre-flight: cron(1 23 ? * WED *) ← 20:01 BRT Wed       │
+│     Reservation: cron(1 3 ? * THU *) ← 00:01 BRT Thu       │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## 📜 Scripts
 
