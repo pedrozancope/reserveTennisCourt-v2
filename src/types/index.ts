@@ -28,6 +28,14 @@ export interface Schedule {
   updatedAt: string
 }
 
+// Interface para entrada de log estruturado (step-by-step)
+export interface LogEntry {
+  step: string
+  message: string
+  details?: Record<string, unknown>
+  timestamp: string
+}
+
 export interface ExecutionLog {
   id: string
   scheduleId?: string
@@ -42,6 +50,9 @@ export interface ExecutionLog {
   durationMs?: number
   isTest?: boolean
   testHour?: number
+  // Campos para log estruturado
+  errorStep?: string
+  executionLog?: LogEntry[]
 }
 
 export interface Reservation {

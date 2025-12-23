@@ -9,9 +9,17 @@ import {
   ChevronDown,
   ChevronUp,
   FlaskConical,
+  Workflow,
+  List,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -23,7 +31,9 @@ import {
 } from "@/components/ui/select"
 import { useLogs } from "@/hooks/useLogs"
 import { useSchedules } from "@/hooks/useSchedules"
+import { FlowStepsLog } from "@/components/logs"
 import type { ExecutionLog } from "@/types"
+import type { ExecutionResult } from "@/lib/flowSteps"
 
 export default function Logs() {
   const [searchParams] = useSearchParams()
@@ -36,6 +46,7 @@ export default function Logs() {
     scheduleIdFromUrl || "all"
   )
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
+  const [viewMode, setViewMode] = useState<"flow" | "simple">("flow")
 
   // Atualizar filtro quando mudar URL
   useEffect(() => {
@@ -93,6 +104,18 @@ export default function Logs() {
     return <Badge variant={variants[status]}>{labels[status]}</Badge>
   }
 
+  // Converter ExecutionLog para ExecutionResult para o FlowStepsLog
+  const convertToExecutionResult = (log: ExecutionLog): ExecutionResult => {
+    return {
+      success: log.status === "success",
+      error: log.status === "error" ? log.message : undefined,
+      step: log.errorStep,
+      duration: log.durationMs,
+      data: log.responsePayload,
+      log: log.executionLog,
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -120,7 +143,7 @@ export default function Logs() {
         </p>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -150,18 +173,43 @@ export default function Logs() {
             </SelectContent>
           </Select>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isRefetching}
-          className="gap-2"
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
-          />
-          Atualizar
-        </Button>
+
+        <div className="flex items-center gap-2 ml-auto">
+          {/* Toggle de visualização */}
+          <div className="flex items-center border rounded-lg overflow-hidden">
+            <Button
+              variant={viewMode === "flow" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none gap-1.5"
+              onClick={() => setViewMode("flow")}
+            >
+              <Workflow className="h-4 w-4" />
+              Fluxo
+            </Button>
+            <Button
+              variant={viewMode === "simple" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none gap-1.5"
+              onClick={() => setViewMode("simple")}
+            >
+              <List className="h-4 w-4" />
+              Simples
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="gap-2"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
+            />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       {!logs || logs.length === 0 ? (
@@ -180,98 +228,181 @@ export default function Logs() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {logs.map((log) => {
             const isExpanded = expandedLogs.has(log.id)
+            const hasStructuredLog =
+              log.executionLog && log.executionLog.length > 0
+
             return (
               <Card key={log.id}>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 flex-1">
-                        {getStatusIcon(log.status)}
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-semibold">
-                              {log.schedule?.name ||
-                                (log.isTest
-                                  ? `Teste E2E - ${
-                                      log.testHour ||
-                                      (log.requestPayload as any)
-                                        ?.reservationHour ||
-                                      "?"
-                                    }:00`
-                                  : "Execução Manual")}
-                            </h3>
-                            {getStatusBadge(log.status)}
-                            {log.isTest && (
-                              <Badge variant="outline" className="gap-1">
-                                <FlaskConical className="h-3 w-3" />
-                                Teste
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {log.message}
-                          </p>
-                          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                            {log.reservationDate && (
-                              <span>
-                                Data da reserva:{" "}
-                                {new Date(
-                                  log.reservationDate
-                                ).toLocaleDateString("pt-BR")}
-                              </span>
-                            )}
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1">
+                      {getStatusIcon(log.status)}
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <CardTitle className="text-base">
+                            {log.schedule?.name ||
+                              (log.isTest
+                                ? `Teste E2E - ${
+                                    log.testHour ||
+                                    (log.requestPayload as any)
+                                      ?.reservationHour ||
+                                    "?"
+                                  }:00`
+                                : "Execução Manual")}
+                          </CardTitle>
+                          {getStatusBadge(log.status)}
+                          {log.isTest && (
+                            <Badge variant="outline" className="gap-1">
+                              <FlaskConical className="h-3 w-3" />
+                              Teste
+                            </Badge>
+                          )}
+                        </div>
+                        <CardDescription>{log.message}</CardDescription>
+                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-1">
+                          {log.reservationDate && (
                             <span>
-                              Executado em:{" "}
-                              {new Date(log.executedAt).toLocaleString("pt-BR")}
+                              📅 Data da reserva:{" "}
+                              {new Date(log.reservationDate).toLocaleDateString(
+                                "pt-BR"
+                              )}
                             </span>
-                            {log.durationMs && (
-                              <span>Duração: {log.durationMs}ms</span>
-                            )}
-                          </div>
+                          )}
+                          <span>
+                            🕐 Executado em:{" "}
+                            {new Date(log.executedAt).toLocaleString("pt-BR")}
+                          </span>
+                          {log.durationMs && (
+                            <span>⏱️ Duração: {log.durationMs}ms</span>
+                          )}
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleExpanded(log.id)}
-                      >
-                        {isExpanded ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
                     </div>
-
-                    {isExpanded && (
-                      <div className="space-y-3 pt-3 border-t">
-                        {log.requestPayload && (
-                          <div>
-                            <h4 className="text-sm font-medium mb-2">
-                              Request Payload
-                            </h4>
-                            <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto">
-                              {JSON.stringify(log.requestPayload, null, 2)}
-                            </pre>
-                          </div>
-                        )}
-                        {log.responsePayload && (
-                          <div>
-                            <h4 className="text-sm font-medium mb-2">
-                              Response Payload
-                            </h4>
-                            <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto">
-                              {JSON.stringify(log.responsePayload, null, 2)}
-                            </pre>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleExpanded(log.id)}
+                      className="gap-1"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ChevronUp className="h-4 w-4" />
+                          Fechar
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          Detalhes
+                        </>
+                      )}
+                    </Button>
                   </div>
-                </CardContent>
+                </CardHeader>
+
+                {isExpanded && (
+                  <CardContent className="pt-0">
+                    <div className="space-y-4 border-t pt-4">
+                      {/* Modo de visualização de fluxo (se houver log estruturado) */}
+                      {viewMode === "flow" && hasStructuredLog ? (
+                        <FlowStepsLog
+                          result={convertToExecutionResult(log)}
+                          isTest={log.isTest}
+                          title="Etapas da Execução"
+                          subtitle={
+                            log.status === "success"
+                              ? "Todas as etapas concluídas com sucesso"
+                              : log.status === "error"
+                              ? `Falha na execução`
+                              : undefined
+                          }
+                        />
+                      ) : (
+                        /* Modo de visualização simples (payloads brutos) */
+                        <>
+                          {log.requestPayload && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+                                Request Payload
+                              </h4>
+                              <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto max-h-48">
+                                {JSON.stringify(log.requestPayload, null, 2)}
+                              </pre>
+                            </div>
+                          )}
+                          {log.responsePayload && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                <span
+                                  className={`inline-block w-2 h-2 rounded-full ${
+                                    log.status === "success"
+                                      ? "bg-green-500"
+                                      : "bg-red-500"
+                                  }`}
+                                ></span>
+                                Response Payload
+                              </h4>
+                              <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto max-h-48">
+                                {JSON.stringify(log.responsePayload, null, 2)}
+                              </pre>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Mostrar mensagem informativa se não houver log estruturado em modo flow */}
+                      {viewMode === "flow" && !hasStructuredLog && (
+                        <div className="p-4 bg-muted/50 rounded-lg border border-dashed">
+                          <p className="text-sm text-muted-foreground text-center">
+                            ℹ️ Este log não possui informações de etapas
+                            estruturadas.
+                            <br />
+                            <span className="text-xs">
+                              Logs mais antigos podem não ter esse nível de
+                              detalhamento.
+                            </span>
+                          </p>
+
+                          {(log.requestPayload || log.responsePayload) && (
+                            <div className="mt-4 space-y-3">
+                              {log.requestPayload && (
+                                <details className="text-xs">
+                                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                                    Ver Request Payload
+                                  </summary>
+                                  <pre className="mt-2 bg-muted p-2 rounded overflow-auto max-h-32">
+                                    {JSON.stringify(
+                                      log.requestPayload,
+                                      null,
+                                      2
+                                    )}
+                                  </pre>
+                                </details>
+                              )}
+                              {log.responsePayload && (
+                                <details className="text-xs">
+                                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                                    Ver Response Payload
+                                  </summary>
+                                  <pre className="mt-2 bg-muted p-2 rounded overflow-auto max-h-32">
+                                    {JSON.stringify(
+                                      log.responsePayload,
+                                      null,
+                                      2
+                                    )}
+                                  </pre>
+                                </details>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                )}
               </Card>
             )
           })}

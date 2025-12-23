@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/services/supabase"
 import type { Database } from "@/types/supabase"
-import type { ExecutionLog, Schedule } from "@/types"
+import type { ExecutionLog, Schedule, LogEntry } from "@/types"
 
 type ExecutionLogRow = Database["public"]["Tables"]["execution_logs"]["Row"]
 type ScheduleRow = Database["public"]["Tables"]["schedules"]["Row"]
@@ -10,6 +10,13 @@ type ScheduleRow = Database["public"]["Tables"]["schedules"]["Row"]
 function mapExecutionLogFromDB(
   row: ExecutionLogRow & { schedule: ScheduleRow | null }
 ): ExecutionLog {
+  // Tentar extrair log estruturado do response_payload
+  const responsePayload = row.response_payload as
+    | Record<string, unknown>
+    | undefined
+  const executionLog = (responsePayload?.log as LogEntry[]) || undefined
+  const errorStep = (responsePayload?.step as string) || undefined
+
   return {
     id: row.id,
     scheduleId: row.schedule_id || undefined,
@@ -41,6 +48,9 @@ function mapExecutionLogFromDB(
     durationMs: row.duration_ms || undefined,
     isTest: (row as any).is_test || false,
     testHour: (row as any).test_hour || undefined,
+    // Novos campos para log estruturado
+    errorStep,
+    executionLog,
   }
 }
 
