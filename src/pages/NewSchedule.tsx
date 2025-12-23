@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   XCircle,
   Plane,
+  Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -212,7 +213,13 @@ export default function NewSchedule() {
   const triggerTime = `${triggerHour
     .toString()
     .padStart(2, "0")}:${triggerMinute.toString().padStart(2, "0")}:00`
-  const nextDates = getNextExecutionDates(formData.reservationDayOfWeek, 3)
+
+  // Calcular próximas datas baseado no modo
+  const nextDates =
+    triggerMode === "reservation_date"
+      ? getNextExecutionDates(formData.reservationDayOfWeek, 3)
+      : []
+
   const triggerDay = getTriggerDayOfWeek(formData.reservationDayOfWeek)
   const cronExpression = generateCronExpression(
     formData.reservationDayOfWeek,
@@ -222,6 +229,80 @@ export default function NewSchedule() {
   const selectedTimeSlot = TIME_SLOTS.find(
     (s) => s.hour === formData.timeSlotHour
   )
+
+  // Calcular próximos disparos (trigger + preflight)
+  const getUpcomingTriggers = () => {
+    const triggers: Array<{
+      type: string
+      date: Date
+      reservationDate?: Date
+    }> = []
+
+    // Determinar quantos disparos mostrar baseado na frequência
+    const count = formData.frequency === "once" ? 1 : 3
+
+    if (triggerMode === "trigger_date" && triggerDatetime) {
+      // Modo data específica
+      const startDate = new Date(triggerDatetime)
+
+      for (let i = 0; i < count; i++) {
+        const mainTrigger = new Date(startDate)
+
+        // Aplicar frequência
+        if (formData.frequency === "weekly") {
+          mainTrigger.setDate(mainTrigger.getDate() + i * 7)
+        } else if (formData.frequency === "biweekly") {
+          mainTrigger.setDate(mainTrigger.getDate() + i * 14)
+        } else if (formData.frequency === "monthly") {
+          mainTrigger.setMonth(mainTrigger.getMonth() + i)
+        }
+        // "once" não precisa de ajuste, só mostra 1 vez
+
+        if (preflightEnabled && preflightHoursBefore > 0) {
+          const preflightTrigger = new Date(mainTrigger)
+          preflightTrigger.setHours(
+            preflightTrigger.getHours() - preflightHoursBefore
+          )
+          triggers.push({
+            type: "preflight",
+            date: preflightTrigger,
+          })
+        }
+
+        triggers.push({
+          type: "main",
+          date: mainTrigger,
+        })
+      }
+    } else if (triggerMode === "reservation_date") {
+      // Modo baseado na reserva (+10 dias)
+      const datesToShow = nextDates.slice(0, count)
+
+      datesToShow.forEach((dateObj) => {
+        if (preflightEnabled && preflightHoursBefore > 0) {
+          const preflightTrigger = new Date(dateObj.triggerDate)
+          preflightTrigger.setHours(
+            preflightTrigger.getHours() - preflightHoursBefore
+          )
+          triggers.push({
+            type: "preflight",
+            date: preflightTrigger,
+            reservationDate: dateObj.reservationDate,
+          })
+        }
+
+        triggers.push({
+          type: "main",
+          date: dateObj.triggerDate,
+          reservationDate: dateObj.reservationDate,
+        })
+      })
+    }
+
+    return triggers
+  }
+
+  const upcomingTriggers = getUpcomingTriggers()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -756,50 +837,93 @@ export default function NewSchedule() {
                 </div>
               )}
 
-              {/* Next Executions - Apenas para modo recorrente */}
-              {triggerMode === "reservation_date" && (
+              {/* Próximos Disparos - Para ambos os modos */}
+              {upcomingTriggers.length > 0 && (
                 <div className="space-y-3">
-                  <Label>Próximas execuções</Label>
+                  <Label className="flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    {triggerMode === "trigger_date"
+                      ? "Disparos Programados"
+                      : "Próximos Disparos"}
+                  </Label>
                   <div className="space-y-2">
-                    {nextDates.map((date, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-warning/10 text-warning">
-                            <span className="text-[10px] font-medium">
-                              {DAY_NAMES_PT_SHORT[date.triggerDate.getDay()]}
-                            </span>
-                            <span className="text-sm font-bold">
-                              {date.triggerDate.getDate()}
-                            </span>
+                    {upcomingTriggers.map((trigger, index) => {
+                      const isPreflight = trigger.type === "preflight"
+                      const reservationDate = trigger.reservationDate
+                        ? new Date(trigger.reservationDate)
+                        : null
+
+                      return (
+                        <div
+                          key={index}
+                          className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                            isPreflight
+                              ? "bg-sky-50 dark:bg-sky-950 border-sky-200 dark:border-sky-800"
+                              : "bg-warning/10 border-warning/20"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg ${
+                                isPreflight
+                                  ? "bg-sky-200 dark:bg-sky-800 text-sky-700 dark:text-sky-300"
+                                  : "bg-warning/20 text-warning"
+                              }`}
+                            >
+                              {isPreflight ? (
+                                <Plane className="h-5 w-5" />
+                              ) : (
+                                <>
+                                  <span className="text-[10px] font-medium">
+                                    {DAY_NAMES_PT_SHORT[trigger.date.getDay()]}
+                                  </span>
+                                  <span className="text-sm font-bold">
+                                    {trigger.date.getDate()}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium">
+                                  {isPreflight ? "🧪 Pre-flight" : "🔔 Disparo"}
+                                  : {trigger.date.toLocaleDateString("pt-BR")}
+                                </p>
+                                {isPreflight && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300"
+                                  >
+                                    Teste
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {trigger.date.toLocaleTimeString("pt-BR", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}{" "}
+                                BRT
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium">
-                              🔔 Disparo:{" "}
-                              {date.triggerDate.toLocaleDateString("pt-BR")}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {triggerHour.toString().padStart(2, "0")}:
-                              {triggerMinute.toString().padStart(2, "0")} BRT
-                            </p>
-                          </div>
+                          {reservationDate && !isPreflight && (
+                            <div className="text-right">
+                              <Badge variant="success">
+                                🎾{" "}
+                                {reservationDate.toLocaleDateString("pt-BR", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                })}
+                              </Badge>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {selectedTimeSlot?.displayName}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <Badge variant="success">
-                            🎾{" "}
-                            {date.reservationDate.toLocaleDateString("pt-BR", {
-                              day: "2-digit",
-                              month: "2-digit",
-                            })}
-                          </Badge>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {selectedTimeSlot?.displayName}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
