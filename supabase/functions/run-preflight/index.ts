@@ -656,22 +656,32 @@ serve(async (req) => {
         schedule.trigger_datetime
       ) {
         const triggerDate = new Date(schedule.trigger_datetime)
-        const preflightDeadline = new Date(
+        const preflightTime = new Date(
           triggerDate.getTime() - hoursBeforeTrigger * 60 * 60 * 1000
         )
 
-        // Verificar se estamos dentro da janela de preflight (1 hora de margem)
-        const windowStart = new Date(
-          preflightDeadline.getTime() - 30 * 60 * 1000
-        ) // 30min antes
-        const windowEnd = new Date(preflightDeadline.getTime() + 30 * 60 * 1000) // 30min depois
+        // REGRA: Nunca antes do horário programado, até 10 minutos depois
+        const preflightTimeEnd = new Date(
+          preflightTime.getTime() + 10 * 60 * 1000
+        )
 
-        if (now >= windowStart && now <= windowEnd) {
-          // Verificar se já executou preflight recentemente
+        // Verificar se estamos na janela: >= preflightTime E < preflightTime + 10min
+        if (now >= preflightTime && now < preflightTimeEnd) {
+          // Verificar se já executou preflight recentemente (últimos 15 min)
           if (
             !schedule.last_preflight_at ||
-            new Date(schedule.last_preflight_at) < windowStart
+            new Date(schedule.last_preflight_at) <
+              new Date(now.getTime() - 15 * 60 * 1000)
           ) {
+            log.info(
+              `📍 Schedule ${schedule.name}: preflight time match (trigger_date mode)`,
+              {
+                now: now.toISOString(),
+                preflightTime: preflightTime.toISOString(),
+                preflightTimeEnd: preflightTimeEnd.toISOString(),
+                triggerDatetime: schedule.trigger_datetime,
+              }
+            )
             schedulesToPreflight.push(schedule)
           }
         }
@@ -714,11 +724,23 @@ serve(async (req) => {
             nextTrigger.getTime() - hoursBeforeTrigger * 60 * 60 * 1000
           )
 
-          // Janela de 1 hora para o preflight
-          const windowStart = new Date(preflightTime.getTime() - 30 * 60 * 1000)
-          const windowEnd = new Date(preflightTime.getTime() + 30 * 60 * 1000)
+          // REGRA: Nunca antes do horário programado, até 10 minutos depois
+          const preflightTimeEnd = new Date(
+            preflightTime.getTime() + 10 * 60 * 1000
+          )
 
-          if (now >= windowStart && now <= windowEnd) {
+          // Verificar se estamos na janela: >= preflightTime E < preflightTime + 10min
+          if (now >= preflightTime && now < preflightTimeEnd) {
+            log.info(
+              `📍 Schedule ${schedule.name}: preflight time match (reservation_date mode)`,
+              {
+                now: now.toISOString(),
+                preflightTime: preflightTime.toISOString(),
+                preflightTimeEnd: preflightTimeEnd.toISOString(),
+                nextTrigger: nextTrigger.toISOString(),
+                hoursBeforeTrigger,
+              }
+            )
             schedulesToPreflight.push(schedule)
           }
         }
