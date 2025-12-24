@@ -34,7 +34,6 @@ import {
   useToggleSchedule,
   useDeleteSchedule,
 } from "@/hooks/useSchedules"
-import { supabase } from "@/services/supabase"
 import { toast } from "sonner"
 
 export default function Schedules() {
@@ -198,16 +197,13 @@ export default function Schedules() {
     setTestingScheduleId(scheduleId)
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const accessToken = sessionData?.session?.access_token
-
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/execute-reservation`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             scheduleId,

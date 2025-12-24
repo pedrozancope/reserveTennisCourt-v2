@@ -262,16 +262,18 @@ export function FlowStepsLog({
               const notificationLog = isErrorStep
                 ? result?.log?.find((l) => l.step === "sending_notification")
                 : null
-              
+
               // Type assertion para os details da notificação
-              const notificationDetails = notificationLog?.details as {
-                sent?: boolean
-                email?: string
-                type?: string
-                configured?: boolean
-                enabled?: boolean
-                isDryRun?: boolean
-              } | undefined
+              const notificationDetails = notificationLog?.details as
+                | {
+                    sent?: boolean
+                    email?: string
+                    type?: string
+                    configured?: boolean
+                    enabled?: boolean
+                    isDryRun?: boolean
+                  }
+                | undefined
 
               return (
                 <div key={step.id}>
@@ -370,8 +372,7 @@ export function FlowStepsLog({
                                   {"✗ FALHOU"}
                                 </Badge>
                               )}
-                              {notificationDetails?.configured ===
-                                false && (
+                              {notificationDetails?.configured === false && (
                                 <Badge
                                   variant="outline"
                                   className="text-[10px] h-4 px-1.5 text-amber-600 border-amber-300"
