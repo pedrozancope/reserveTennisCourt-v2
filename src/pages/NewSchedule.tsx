@@ -212,11 +212,6 @@ export default function NewSchedule() {
     setPreflightNotifyOnFailure(schedule.preflightNotifyOnFailure ?? true)
   }, [schedule, isEditMode, timeSlots])
 
-  // Calculate preview data
-  const triggerTime = `${triggerHour
-    .toString()
-    .padStart(2, "0")}:${triggerMinute.toString().padStart(2, "0")}:00`
-
   // Calcular próximas datas baseado no modo
   const nextDates =
     triggerMode === "reservation_date"
