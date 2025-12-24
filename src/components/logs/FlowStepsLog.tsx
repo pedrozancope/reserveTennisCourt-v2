@@ -262,6 +262,16 @@ export function FlowStepsLog({
               const notificationLog = isErrorStep
                 ? result?.log?.find((l) => l.step === "sending_notification")
                 : null
+              
+              // Type assertion para os details da notificação
+              const notificationDetails = notificationLog?.details as {
+                sent?: boolean
+                email?: string
+                type?: string
+                configured?: boolean
+                enabled?: boolean
+                isDryRun?: boolean
+              } | undefined
 
               return (
                 <div key={step.id}>
@@ -331,9 +341,9 @@ export function FlowStepsLog({
                       <div className="mt-3 flex items-start gap-2 p-2.5 rounded-lg border bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700">
                         <Bell
                           className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
-                            notificationLog.details?.sent
+                            notificationDetails?.sent
                               ? "text-green-600 dark:text-green-400"
-                              : notificationLog.details?.configured === false
+                              : notificationDetails?.configured === false
                               ? "text-amber-600 dark:text-amber-400"
                               : "text-red-600 dark:text-red-400"
                           }`}
@@ -344,29 +354,29 @@ export function FlowStepsLog({
                               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                                 Notificação por E-mail
                               </span>
-                              {notificationLog.details?.sent && (
+                              {notificationDetails?.sent && (
                                 <Badge
                                   variant="success"
                                   className="text-[10px] h-4 px-1.5"
                                 >
-                                  ✓ ENVIADO
+                                  {"✓ ENVIADO"}
                                 </Badge>
                               )}
-                              {notificationLog.details?.sent === false && (
+                              {notificationDetails?.sent === false && (
                                 <Badge
                                   variant="destructive"
                                   className="text-[10px] h-4 px-1.5"
                                 >
-                                  ✗ FALHOU
+                                  {"✗ FALHOU"}
                                 </Badge>
                               )}
-                              {notificationLog.details?.configured ===
+                              {notificationDetails?.configured ===
                                 false && (
                                 <Badge
                                   variant="outline"
                                   className="text-[10px] h-4 px-1.5 text-amber-600 border-amber-300"
                                 >
-                                  ⊘ NÃO CONFIG.
+                                  {"⊘ NÃO CONFIG."}
                                 </Badge>
                               )}
                             </div>
@@ -382,40 +392,40 @@ export function FlowStepsLog({
                             {notificationLog.message}
                           </p>
                           <div className="space-y-0.5">
-                            {notificationLog.details?.email && (
+                            {notificationDetails?.email && (
                               <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-500">
                                 <span className="font-medium">
                                   Destinatário:
                                 </span>
                                 <span className="font-mono">
-                                  {notificationLog.details.email}
+                                  {String(notificationDetails.email)}
                                 </span>
                               </div>
                             )}
-                            {notificationLog.details?.type && (
+                            {notificationDetails?.type && (
                               <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-500">
                                 <span className="font-medium">Tipo:</span>
                                 <span
                                   className={
-                                    notificationLog.details.type === "error"
+                                    notificationDetails.type === "error"
                                       ? "text-red-600 dark:text-red-400 font-medium"
                                       : "text-green-600 dark:text-green-400 font-medium"
                                   }
                                 >
-                                  {notificationLog.details.type === "error"
+                                  {notificationDetails.type === "error"
                                     ? "❌ Notificação de Erro"
                                     : "✅ Notificação de Sucesso"}
                                 </span>
                               </div>
                             )}
-                            {notificationLog.details?.isDryRun && (
+                            {notificationDetails?.isDryRun && (
                               <div className="flex items-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400">
                                 <span className="font-medium">🔍 Modo:</span>
-                                <span>Dry Run (Simulação)</span>
+                                <span>{"Dry Run (Simulação)"}</span>
                               </div>
                             )}
-                            {!notificationLog.details?.sent &&
-                              !notificationLog.details?.configured && (
+                            {!notificationDetails?.sent &&
+                              !notificationDetails?.configured && (
                                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-500 mt-1">
                                   <span>
                                     💡 Configure o e-mail nas Configurações para
