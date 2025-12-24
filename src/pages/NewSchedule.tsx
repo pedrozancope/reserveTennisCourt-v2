@@ -188,7 +188,10 @@ export default function NewSchedule() {
     // Carregar configurações avançadas
     if (schedule.triggerTime) {
       const [h, m] = schedule.triggerTime.split(":")
-      setTriggerHour(parseInt(h) || 0)
+      const utcHour = parseInt(h) || 0
+      // Converter de UTC para BRT (subtrai 3 horas)
+      const brtHour = (utcHour - 3 + 24) % 24
+      setTriggerHour(brtHour)
       setTriggerMinute(parseInt(m) || 1)
     }
     setTriggerMode(schedule.triggerMode || "reservation_date")
@@ -217,7 +220,12 @@ export default function NewSchedule() {
   // Calcular próximas datas baseado no modo
   const nextDates =
     triggerMode === "reservation_date"
-      ? getNextExecutionDates(formData.reservationDayOfWeek, 3)
+      ? getNextExecutionDates(
+          formData.reservationDayOfWeek,
+          3,
+          triggerHour,
+          triggerMinute
+        )
       : []
 
   const triggerDay = getTriggerDayOfWeek(formData.reservationDayOfWeek)
@@ -337,12 +345,24 @@ export default function NewSchedule() {
       triggerDatetimeISO = localDate.toISOString()
     }
 
+    // Converter trigger_time de BRT para UTC (adiciona 3 horas)
+    // Isso garante consistência com trigger_datetime que também é salvo em UTC
+    const triggerHourUTC = (triggerHour + 3) % 24
+    const triggerTimeUTC = `${triggerHourUTC
+      .toString()
+      .padStart(2, "0")}:${triggerMinute.toString().padStart(2, "0")}:00`
+
+    // Se a conversão para UTC cruzou a meia-noite, o dia também muda
+    // Ex: 21:00 BRT de Terça → 00:00 UTC de Quarta
+    const dayShift = triggerHour + 3 >= 24 ? 1 : 0
+    const triggerDayUTC = (triggerDay + dayShift) % 7
+
     const scheduleData: any = {
       name: formData.name,
       time_slot_id: timeSlot.id,
       reservation_day_of_week: formData.reservationDayOfWeek,
-      trigger_day_of_week: triggerDay,
-      trigger_time: triggerTime,
+      trigger_day_of_week: triggerDayUTC,
+      trigger_time: triggerTimeUTC,
       trigger_mode: triggerMode,
       trigger_datetime: triggerDatetimeISO,
       cron_expression: cronExpression,

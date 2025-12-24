@@ -108,21 +108,26 @@ export default function Schedules() {
     }
 
     // MODO: Baseado na reserva (reservation_date)
-    // Horário sempre 00:01, dia baseado no dia da reserva com regra dos 10 dias
+    // O trigger_time e trigger_day_of_week estão em UTC no banco
+    // Precisamos converter para horário local para exibição
     if (schedule.triggerMode === "reservation_date") {
       // Se frequência é "once" e não há triggerDatetime, não há próximo disparo definido
       if (schedule.frequency === "once") {
         return null
       }
 
-      // Para frequências recorrentes, calcula baseado no triggerDayOfWeek (que já considera os 10 dias)
-      const triggerDay = schedule.triggerDayOfWeek
-      const [hours, minutes] = schedule.triggerTime.split(":").map(Number)
+      // Converter de UTC para BRT (subtrai 3 horas)
+      const [utcHours, minutes] = schedule.triggerTime.split(":").map(Number)
+      const brtHours = (utcHours - 3 + 24) % 24
 
-      let daysUntilTrigger = (triggerDay - now.getDay() + 7) % 7
+      // Se a conversão voltou um dia (ex: 02:00 UTC → 23:00 BRT do dia anterior)
+      const dayShift = utcHours - 3 < 0 ? -1 : 0
+      const triggerDayBRT = (schedule.triggerDayOfWeek + dayShift + 7) % 7
+
+      let daysUntilTrigger = (triggerDayBRT - now.getDay() + 7) % 7
       if (daysUntilTrigger === 0) {
         const todayTrigger = new Date(now)
-        todayTrigger.setHours(hours, minutes, 0, 0)
+        todayTrigger.setHours(brtHours, minutes, 0, 0)
         if (todayTrigger <= now) {
           daysUntilTrigger = 7
         }
@@ -130,7 +135,7 @@ export default function Schedules() {
 
       const nextTrigger = new Date(now)
       nextTrigger.setDate(now.getDate() + daysUntilTrigger)
-      nextTrigger.setHours(hours, minutes, 0, 0)
+      nextTrigger.setHours(brtHours, minutes, 0, 0)
       return nextTrigger
     }
 

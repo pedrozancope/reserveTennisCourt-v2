@@ -57,19 +57,25 @@ export default function Dashboard() {
     }
 
     // MODO: Baseado na reserva (reservation_date)
+    // O trigger_time e trigger_day_of_week estão em UTC no banco
     if (schedule.triggerMode === "reservation_date") {
       // Frequência única: não mostra no dashboard (execução única já passou)
       if (schedule.frequency === "once") {
         return null
       }
 
-      const triggerDay = schedule.triggerDayOfWeek
-      const [hours, minutes] = schedule.triggerTime.split(":").map(Number)
+      // Converter de UTC para BRT (subtrai 3 horas)
+      const [utcHours, minutes] = schedule.triggerTime.split(":").map(Number)
+      const brtHours = (utcHours - 3 + 24) % 24
 
-      let daysUntilTrigger = (triggerDay - now.getDay() + 7) % 7
+      // Se a conversão voltou um dia (ex: 02:00 UTC → 23:00 BRT do dia anterior)
+      const dayShift = utcHours - 3 < 0 ? -1 : 0
+      const triggerDayBRT = (schedule.triggerDayOfWeek + dayShift + 7) % 7
+
+      let daysUntilTrigger = (triggerDayBRT - now.getDay() + 7) % 7
       if (daysUntilTrigger === 0) {
         const todayTrigger = new Date(now)
-        todayTrigger.setHours(hours, minutes, 0, 0)
+        todayTrigger.setHours(brtHours, minutes, 0, 0)
         if (todayTrigger <= now) {
           daysUntilTrigger = 7
         }
@@ -77,7 +83,7 @@ export default function Dashboard() {
 
       const nextTrigger = new Date(now)
       nextTrigger.setDate(now.getDate() + daysUntilTrigger)
-      nextTrigger.setHours(hours, minutes, 0, 0)
+      nextTrigger.setHours(brtHours, minutes, 0, 0)
       return nextTrigger
     }
 

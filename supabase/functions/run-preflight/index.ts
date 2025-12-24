@@ -527,9 +527,11 @@ serve(async (req) => {
 
     // Parse payload (opcional - para execução manual de um schedule específico)
     let specificScheduleId: string | undefined
+    let forceExecution = false
     try {
       const payload = await req.json()
       specificScheduleId = payload.scheduleId
+      forceExecution = payload.force === true // Permite forçar execução ignorando janela de tempo
     } catch {
       // No payload - verificar todos os schedules
     }
@@ -573,10 +575,18 @@ serve(async (req) => {
 
     // ==========================================================================
     // Filtrar schedules que precisam de preflight AGORA
+    // (ou todos se forceExecution = true)
     // ==========================================================================
     const schedulesToPreflight: any[] = []
 
     for (const schedule of schedules) {
+      // Se force = true, executa sem verificar janela de tempo
+      if (forceExecution) {
+        log.info(`🔧 Force execution enabled for schedule: ${schedule.name}`)
+        schedulesToPreflight.push(schedule)
+        continue
+      }
+
       const hoursBeforeTrigger = schedule.preflight_hours_before || 4
 
       // Para trigger_mode = 'trigger_date', calcular baseado em trigger_datetime

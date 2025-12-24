@@ -66,10 +66,16 @@ export function generateCronExpression(
 
 /**
  * Calcula as próximas N datas de execução
+ * @param reservationDayOfWeek - Dia da semana da reserva (0=Dom, 6=Sáb)
+ * @param count - Número de datas a calcular
+ * @param triggerHour - Hora do disparo em BRT (padrão: 0)
+ * @param triggerMinute - Minuto do disparo (padrão: 1)
  */
 export function getNextExecutionDates(
   reservationDayOfWeek: number,
-  count: number = 3
+  count: number = 3,
+  triggerHour: number = 0,
+  triggerMinute: number = 1
 ): { triggerDate: Date; reservationDate: Date }[] {
   const results: { triggerDate: Date; reservationDate: Date }[] = []
   const today = new Date()
@@ -80,16 +86,19 @@ export function getNextExecutionDates(
   const currentDay = today.getDay()
   let daysUntilTrigger = (triggerDayOfWeek - currentDay + 7) % 7
 
-  // Se for hoje mas já passou da meia-noite, pega a próxima semana
+  // Se for hoje mas já passou do horário de trigger, pega a próxima semana
   if (daysUntilTrigger === 0) {
     const now = new Date()
-    if (now.getHours() > 0 || now.getMinutes() > 1) {
+    if (
+      now.getHours() > triggerHour ||
+      (now.getHours() === triggerHour && now.getMinutes() > triggerMinute)
+    ) {
       daysUntilTrigger = 7
     }
   }
 
   nextTrigger.setDate(today.getDate() + daysUntilTrigger)
-  nextTrigger.setHours(0, 1, 0, 0)
+  nextTrigger.setHours(triggerHour, triggerMinute, 0, 0)
 
   for (let i = 0; i < count; i++) {
     const triggerDate = new Date(nextTrigger)
@@ -106,10 +115,19 @@ export function getNextExecutionDates(
 
 /**
  * Formata cron expression para exibição legível
+ * @param reservationDayOfWeek - Dia da reserva (0=Dom, 6=Sáb)
+ * @param triggerHour - Hora do disparo em BRT (padrão: 0)
+ * @param triggerMinute - Minuto do disparo (padrão: 1)
  */
-export function formatCronDescription(reservationDayOfWeek: number): string {
+export function formatCronDescription(
+  reservationDayOfWeek: number,
+  triggerHour: number = 0,
+  triggerMinute: number = 1
+): string {
   const triggerDay = getTriggerDayOfWeek(reservationDayOfWeek)
-  return `Toda ${DAY_NAMES_PT[triggerDay]} às 00:01`
+  const hourStr = triggerHour.toString().padStart(2, "0")
+  const minuteStr = triggerMinute.toString().padStart(2, "0")
+  return `Toda ${DAY_NAMES_PT[triggerDay]} às ${hourStr}:${minuteStr}`
 }
 
 /**
