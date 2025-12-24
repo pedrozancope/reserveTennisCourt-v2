@@ -1,4 +1,4 @@
-# 🎾 Reserve Tennis Court
+# 🎾 Zerve
 
 > _"A quadra das 7h é minha!"_ — Você, finalmente descansado
 
@@ -8,7 +8,7 @@ Sistema automatizado de reservas de quadras de tênis que trabalha enquanto voc�
 
 ## ✨ What is this?
 
-Reserve Tennis Court é um **robô incansável** que garante sua quadra:
+Zerve é um **robô incansável** que garante sua quadra:
 
 - ⏰ **Dispara** exatamente às 00:01 (quando as reservas abrem)
 - 🔐 **Autentica** automaticamente na API do Speed

@@ -5,7 +5,7 @@
 ### 1. Preparar ambiente
 
 ```bash
-cd /Users/pedro.zancope/Desktop/reserveTennisCourt-v2
+cd /Users/pedro.zancope/Desktop/Zerve
 
 # Criar .env.local para as functions
 cat > supabase/.env.local << EOF

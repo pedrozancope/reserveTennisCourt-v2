@@ -1,4 +1,4 @@
-# Supabase Edge Functions - Tennis Scheduler
+# Supabase Edge Functions - Zerve
 
 Edge Functions serverless em Deno para gerenciar reservas automáticas.
 

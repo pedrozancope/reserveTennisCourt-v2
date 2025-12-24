@@ -29,7 +29,7 @@ export function Header() {
 
   // Get current page title
   const currentPage = navItems.find((item) => item.path === location.pathname)
-  const pageTitle = currentPage?.label || "Tennis Scheduler"
+  const pageTitle = currentPage?.label || "Zerve"
 
   return (
     <header className="sticky top-0 z-40 bg-card border-b border-border">
@@ -39,7 +39,7 @@ export function Header() {
           <div className="flex items-center gap-3">
             <span className="text-2xl">🎾</span>
             <div className="hidden sm:block">
-              <h1 className="text-lg font-semibold">Tennis Scheduler</h1>
+              <h1 className="text-lg font-semibold">Zerve</h1>
               <p className="text-xs text-muted-foreground">
                 Reservas automáticas
               </p>

@@ -141,7 +141,7 @@ async function sendNotificationEmail(
         Authorization: `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "Tennis Scheduler <noreply@resend.dev>",
+        from: "Zerve <noreply@resend.dev>",
         to: [to],
         subject,
         html: htmlBody,
@@ -205,7 +205,7 @@ function generatePreflightSuccessEmailHtml(
         <!-- Footer -->
         <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
           <p style="color: #9ca3af; font-size: 11px; margin: 0; text-align: center;">
-            🎾 Tennis Scheduler - Pre-flight Check
+            🎾 Zerve - Pre-flight Check
           </p>
         </div>
       </div>
@@ -273,7 +273,7 @@ function generatePreflightErrorEmailHtml(
         <!-- Footer -->
         <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
           <p style="color: #9ca3af; font-size: 11px; margin: 0; text-align: center;">
-            🎾 Tennis Scheduler - Pre-flight Check
+            🎾 Zerve - Pre-flight Check
           </p>
         </div>
       </div>

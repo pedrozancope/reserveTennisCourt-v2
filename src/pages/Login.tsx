@@ -55,7 +55,7 @@ export default function Login() {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold text-primary">
-            Tennis Scheduler
+            Zerve
           </CardTitle>
           <CardDescription className="text-base">
             Gerencie suas reservas de quadras de tênis de forma automatizada
